@@ -8,7 +8,8 @@ Page: https://pleaseruiz.github.io/measure-y-watch/
   `data/results.json` and publishes the site. It saves only the county's counts; the forecast
   tab works out its numbers in each visitor's browser.
 - `config.json` holds `expected_votes` (null hides the progress bar).
-- `forecast.html` is the just-for-fun forecast tab, Peanut's Needle. The model is `js/peanut-model.js`
+- `forecast.html` is the just-for-fun forecast tab, PEANUT (Peninsula Election Analysis & Needle,
+  Unofficial Tally), named for its mascot, a dog called Peanut. The model is `js/peanut-model.js`
   (it runs in the browser, in `js/peanut-worker.js` when it can), every assumption is in
   `data/peanut-priors.json`, and `node --test tests/peanut-model.test.js` runs its tests.
 

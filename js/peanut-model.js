@@ -1,4 +1,5 @@
-/* Peanut's Needle: the forecast engine behind the forecast tab (forecast.html).
+/* PEANUT (Peninsula Election Analysis & Needle, Unofficial Tally): the forecast engine behind
+ * the forecast tab (forecast.html).
  *
  * Pure functions, no DOM. Runs in the browser (window.PeanutModel) and in Node
  * (require) for tests. Given the county reports saved in results.json and the
