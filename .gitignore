@@ -8,9 +8,20 @@ node_modules/
 # Playwright traces, screenshots and network logs
 test-results/
 playwright-report/
-trace*.zip
+blob-report/
+playwright/.cache/
+playwright/.auth/
+.auth/
+storageState*.json
+*trace*.zip
 *.har
 screenshots/
+shots/
+*.png
+*.jpg
+*.jpeg
+*.webm
+videos/
 network*.json
 .last-fetch
 _site/

@@ -9,7 +9,7 @@ Page: https://pleaseruiz.github.io/measure-y-watch/
   tab works out its numbers in each visitor's browser.
 - `config.json` holds `expected_votes` (null hides the progress bar).
 - `forecast.html` is the just-for-fun forecast tab, PEANUT (Peninsula Election Analysis & Needle,
-  Unofficial Tally), named for its mascot, a dog called Peanut. The model is `js/peanut-model.js`
+  Unofficial Tally). The model is `js/peanut-model.js`
   (it runs in the browser, in `js/peanut-worker.js` when it can), every assumption is in
   `data/peanut-priors.json`, and `node --test tests/peanut-model.test.js` runs its tests.
 
@@ -30,7 +30,8 @@ GitHub app or github.com: **Actions → Update results → Run workflow** (branc
   The time is required: a made-up time could make the county's next update look old and get
   skipped. Saved with `"source": "manual"`.
 - **Allow decrease**: tick only when the county really lowered a count, or to fix a
-  manual typo. Applies to that one run.
+  manual typo. Applies to that one run. If the county itself lowered a count while you were
+  typing entries by hand, also turn the forecast tab off (see below).
 - **Certified**: tick once, after the county certifies the count (Dec 3). The page then shows
   CERTIFIED and the forecast tab shows the final result. It's refused before Nov 17. If it was
   ticked by mistake, edit `data/results.json` on `main` (github.com, pencil icon) and change
@@ -42,6 +43,16 @@ place in line), start it again.
 **Turn the forecast tab off**: edit `data/peanut-priors.json` on `main` and change
 `"paused": false` to `"paused": true`. Within a couple of minutes the tab says Peanut is taking a
 break, even on pages already open. Change it back to turn it on. The Live count tab isn't affected.
+
+**Mid-count rules for the forecast tab** (from the 8:10 PM report until the county certifies):
+- Change `data/peanut-priors.json` only to fix a real error, and list every number change at the
+  end of the forecast page's methodology ("Changes to the assumptions after the first report").
+  An edit that only changes wording keeps `"version"` as it is, so no number moves. A change to
+  any number must also change `"version"`.
+- Pause only for broken data or a model bug (for example a county correction), never because of an
+  unwelcome number.
+- After pushing a change to that file, check that the run it started turned green. If it says
+  Cancelled, start Update results by hand: a hand-started run always republishes.
 
 A run fails (red, and GitHub emails you) when the contest title changes, a number isn't a
 whole number, YES or NO goes down, a manual time isn't newer than the saved one, or the
