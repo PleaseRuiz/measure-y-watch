@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Measure Y Watch</title>
+<meta name="description" content="Live count for Belmont's Measure Y, updated each time San Mateo County posts new results.">
+<meta property="og:title" content="Measure Y Watch">
+<meta property="og:description" content="Live count for Belmont's Measure Y. First results Tue, Nov 3 at 8:10 PM.">
+<meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1114" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F7; --card:#FFFFFF; --ink:#111418; --ink-2:#3A424B; --muted:#5B6570;
+  --line:#E6E9EE; --border:#D5DAE1; --track:#E3E7EC; --shadow:0 1px 2px rgba(17,20,24,.06);
+  --z1:#D95C22; --z2:#EBAA85; --z3:#D9DEE4; --z4:#8BD9C2; --z5:#1FA37F;
+  --t1:#B5441A; --t2:#9A4A22; --t3:#3E4650; --t4:#0B7A61; --t5:#0B6B55;
+  --needle:#111418; --hub-ring:#FFFFFF;
+  --up-bg:#DDF4EC; --up-fg:#0B6B55; --down-bg:#FBE6DC; --down-fg:#A2421A; --flat-bg:#EEF0F3; --flat-fg:#3E4650;
+  --accent:#0B7A61; --sample:#9A5B00; --btn:#111418; --btn-ink:#FFFFFF; --toggle-off:#C9CFD6; --toggle-on:#0B7A61;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1114; --card:#171B20; --ink:#EEF1F4; --ink-2:#C9D1D9; --muted:#9AA5B0;
+    --line:#232931; --border:#2E353D; --track:#272D34; --shadow:none;
+    --z1:#E0662A; --z2:#8C4F33; --z3:#3A434D; --z4:#2D7D69; --z5:#4FD6B0;
+    --t1:#F08A55; --t2:#E8A27E; --t3:#C9D1D9; --t4:#7FDCC0; --t5:#4FD6B0;
+    --needle:#F4F6F8; --hub-ring:#171B20;
+    --up-bg:#123A30; --up-fg:#7FE0C2; --down-bg:#3D2216; --down-fg:#F4A27A; --flat-bg:#262C33; --flat-fg:#C9D1D9;
+    --accent:#4FD6B0; --sample:#F2B33D; --btn:#EEF1F4; --btn-ink:#0E1114; --toggle-off:#3A424B; --toggle-on:#2D9C7E;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4}
+.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+a{color:var(--accent)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.page{max-width:1120px;margin:0 auto;padding:24px 16px 40px}
+@media (min-width:720px){.page{padding:40px 32px 56px}}
+
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:14px 24px;margin-bottom:20px}
+.top h1{margin:0;font-size:clamp(28px,4.2vw,44px);font-weight:800;letter-spacing:-.025em;line-height:1.02}
+.sub{margin:6px 0 0;color:var(--muted);font-size:15px}
+.top-meta{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:700;letter-spacing:.12em;padding:7px 12px;border-radius:999px;border:1px solid var(--border);color:var(--ink-2);background:var(--card);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill.live .dot{background:var(--z5);animation:pulse 1.6s ease-in-out infinite}
+.pill.sample{color:var(--sample);border-color:currentColor}
+.pill.sample .dot{background:currentColor}
+.pill.error{color:var(--t1);border-color:currentColor}
+.pill.error .dot{background:currentColor}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.updated{font-size:13px;color:var(--muted)}
+
+.grid{display:grid;gap:16px}
+@media (min-width:900px){.grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:20px;align-items:start}}
+.side{display:grid;gap:16px}
+@media (min-width:900px){.side{gap:20px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+@media (min-width:900px){.card{padding:26px 28px}}
+.h{margin:0;font-size:15px;font-weight:700}
+
+/* Dial */
+.dial-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:22px}
+@media (min-width:900px){.dial-card{padding:34px 36px 30px;min-height:100%;justify-content:center}}
+.dial{width:100%;max-width:540px;height:auto;display:block;overflow:visible}
+.seg{fill:none;stroke-width:46}
+.s1{stroke:var(--z1)}.s2{stroke:var(--z2)}.s3{stroke:var(--z3)}.s4{stroke:var(--z4)}.s5{stroke:var(--z5)}
+.pass-tick{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
+.dial-label{fill:var(--muted);font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-weight:500;letter-spacing:.08em}
+.dial-label.strong{fill:var(--ink);font-weight:700}
+.needle{transform-box:view-box;transform-origin:200px 225px;transition:transform .55s cubic-bezier(.25,.8,.35,1)}
+.needle line{stroke:var(--needle);stroke-width:5;stroke-linecap:round}
+.hub{fill:var(--needle);stroke:var(--hub-ring);stroke-width:6}
+.zone{margin:12px 0 4px;font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--t3)}
+.zone.z1{color:var(--t1)}.zone.z2{color:var(--t2)}.zone.z3{color:var(--t3)}.zone.z4{color:var(--t4)}.zone.z5{color:var(--t5)}
+.hero{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:4px 12px}
+.hero-num{font-size:clamp(52px,8.4vw,84px);font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.hero-label{font-size:17px;color:var(--muted)}
+.hero-sub{margin:10px 0 0;font-size:15px;color:var(--muted)}
+.dial-foot{margin-top:18px;display:flex;justify-content:center}
+.chip-btn{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--ink-2);font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
+.chip-btn:hover{border-color:var(--muted)}
+.chip-btn .state{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.06em;color:var(--muted)}
+
+/* Count */
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.stat{font-size:15px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.bar{height:10px;border-radius:999px;background:var(--track);overflow:hidden;margin:12px 0 10px}
+.bar-fill{height:100%;width:0;border-radius:999px;background:var(--ink);transition:width .6s ease}
+.note{margin:0;font-size:13px;color:var(--muted)}
+.next{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.label{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--muted)}
+.next-val{font-size:15px;font-weight:600}
+
+/* Moves */
+.moves{list-style:none;margin:10px 0 0;padding:0}
+@media (min-width:900px){.moves{max-height:296px;overflow-y:auto}}
+.moves li{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;border-top:1px solid var(--line)}
+.moves .when{font-size:14px;color:var(--ink-2)}
+.moves .right{display:flex;align-items:center;gap:10px}
+.moves .share{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.delta{min-width:74px;text-align:center;font-size:12px;font-weight:700;padding:4px 8px;border-radius:999px;background:var(--flat-bg);color:var(--flat-fg)}
+.delta.up{background:var(--up-bg);color:var(--up-fg)}
+.delta.down{background:var(--down-bg);color:var(--down-fg)}
+.moves .empty{color:var(--muted);font-size:14px;justify-content:flex-start}
+
+/* Actions */
+.actions{display:grid;gap:10px;background:transparent;border:0;box-shadow:none;padding:0}
+@media (min-width:900px){.actions{padding:0}}
+.switch-btn{min-height:52px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 14px 0 16px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
+.switch-btn small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.track{position:relative;width:44px;height:26px;flex-shrink:0;border-radius:999px;background:var(--toggle-off);transition:background .16s}
+.knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .16s}
+.switch-btn[aria-pressed="true"] .track{background:var(--toggle-on)}
+.switch-btn[aria-pressed="true"] .knob{left:21px}
+.share-btn{min-height:54px;border:0;border-radius:14px;background:var(--btn);color:var(--btn-ink);font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.share-btn:hover{opacity:.92}
+.quip{margin:2px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Footer */
+.foot{margin-top:28px;display:grid;gap:12px;font-size:13px;color:var(--muted)}
+@media (min-width:900px){.foot{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:20px}}
+.foot p{margin:0}
+details{border-top:1px solid var(--border);padding-top:10px}
+@media (min-width:900px){details{border-top:0;padding-top:0}}
+summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
+.sched{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.sched li{display:flex;justify-content:space-between;gap:12px}
+.sched li.past{opacity:.55}
+.sched li.is-next{color:var(--ink);font-weight:600}
+
+@media (prefers-reduced-motion: reduce){
+  .needle,.bar-fill,.track,.knob{transition:none}
+  .pill.live .dot{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Measure Y Watch</h1>
+      <p class="sub">Belmont community center tax · Nov 3, 2026 election</p>
+    </div>
+    <div class="top-meta">
+      <span class="pill mono" id="pill"><span class="dot" aria-hidden="true"></span><span id="pillText">LOADING</span></span>
+      <span class="updated" id="updated"></span>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card dial-card" aria-labelledby="dialHeading">
+      <h2 id="dialHeading" class="sr-only">Where YES stands</h2>
+      <svg class="dial" viewBox="0 0 400 250" role="img" aria-labelledby="dialTitle">
+        <title id="dialTitle">Needle showing the YES share against the 50% pass line</title>
+        <path class="seg s1" d="M35 225 A165 165 0 0 1 84.97 106.71"/>
+        <path class="seg s2" d="M89.17 102.77 A165 165 0 0 1 166.26 63.49"/>
+        <path class="seg s3" d="M171.92 62.41 A165 165 0 0 1 228.08 62.41"/>
+        <path class="seg s4" d="M233.74 63.49 A165 165 0 0 1 310.83 102.77"/>
+        <path class="seg s5" d="M315.03 106.71 A165 165 0 0 1 365 225"/>
+        <line class="pass-tick" x1="200" y1="24" x2="200" y2="88"/>
+        <text class="dial-label strong" x="200" y="14" text-anchor="middle" id="passLabel">PASS LINE 50%</text>
+        <text class="dial-label" x="35" y="247" text-anchor="middle" id="loLabel">25%</text>
+        <text class="dial-label" x="365" y="247" text-anchor="middle" id="hiLabel">75%</text>
+        <g class="needle" id="needle"><line x1="200" y1="225" x2="200" y2="76"/></g>
+        <circle class="hub" cx="200" cy="225" r="15"/>
+      </svg>
+      <p class="zone mono" id="zone">LOADING</p>
+      <div class="hero" aria-live="polite">
+        <span class="hero-num" id="heroNum">–</span>
+        <span class="hero-label" id="heroLabel">YES so far</span>
+      </div>
+      <p class="hero-sub" id="heroSub">Pass line: 50% + 1 vote</p>
+      <div class="dial-foot">
+        <button type="button" class="chip-btn" id="wobbleBtn" aria-pressed="true">Wobble <span class="state" id="wobbleState">ON</span></button>
+      </div>
+    </section>
+
+    <div class="side">
+      <section class="card" aria-labelledby="countHeading">
+        <div class="row">
+          <h2 class="h" id="countHeading">Votes counted on Y</h2>
+          <span class="stat" id="countStat">0</span>
+        </div>
+        <div class="bar" id="bar" hidden><div class="bar-fill" id="barFill"></div></div>
+        <p class="note" id="countNote" style="margin-top:10px"></p>
+        <div class="next">
+          <span class="label mono">NEXT COUNTY UPDATE</span>
+          <span class="next-val" id="nextUpdate">Tue, Nov 3 · 8:10 PM</span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="movesHeading">
+        <h2 class="h" id="movesHeading">How it's moved</h2>
+        <ol class="moves" id="moves"></ol>
+      </section>
+
+      <section class="card actions" aria-label="Alerts and sharing">
+        <button type="button" class="switch-btn" id="notifyBtn" aria-pressed="false" hidden>
+          <span>Ping me if it moves 1+ pt<small>While this tab is open</small></span>
+          <span class="track" aria-hidden="true"><span class="knob"></span></span>
+        </button>
+        <button type="button" class="share-btn" id="shareBtn">Send to the group chat</button>
+        <p class="quip">You will refresh this. We've made peace with that.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p>Numbers come from <a id="sourceLink" href="https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html">San Mateo County's semi-official results</a>. They can change until the county certifies on Dec 3. This page isn't run by the county, and the "expected" vote total is our estimate.</p>
+    <details>
+      <summary>County update schedule</summary>
+      <ul class="sched" id="sched"></ul>
+    </details>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var DATA_URL = 'data/results.json';
+  var POLL_MS = 60000;
+  var SPAN = 25; // points shown either side of the pass line
+  var TZ = 'America/Los_Angeles';
+  var COUNTY_URL = 'https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html';
+
+  // Published by San Mateo County for the Nov 3, 2026 election (Pacific time).
+  var SCHEDULE = [
+    { t: '2026-11-03T20:10:00-08:00', label: 'Tue, Nov 3 · 8:10 PM', note: 'First count' },
+    { t: '2026-11-03T21:00:00-08:00', label: 'Tue, Nov 3 · 9 PM, then hourly', hourlyUntil: '2026-11-04T03:00:00-08:00' },
+    { t: '2026-11-05T16:30:00-08:00', label: 'Thu, Nov 5 · by 4:30 PM' },
+    { t: '2026-11-06T16:30:00-08:00', label: 'Fri, Nov 6 · by 4:30 PM' },
+    { t: '2026-11-09T16:30:00-08:00', label: 'Mon, Nov 9 · by 4:30 PM' },
+    { t: '2026-11-12T09:30:00-08:00', label: 'Thu, Nov 12 · by 9:30 AM' },
+    { t: '2026-11-13T16:30:00-08:00', label: 'Fri, Nov 13 · by 4:30 PM' },
+    { t: '2026-11-16T16:30:00-08:00', label: 'Mon, Nov 16 · by 4:30 PM' },
+    { t: '2026-12-03T17:00:00-08:00', label: 'Thu, Dec 3', note: 'Certified' }
+  ];
+
+  // Sample numbers for ?demo=1 only. Never shown on the live page.
+  var SAMPLE = {
+    status: 'counting',
+    threshold: 0.5,
+    expected_votes: 13400,
+    source_url: COUNTY_URL,
+    latest: { yes: 7645, no: 3245, county_updated: '2026-11-09T16:28:00-08:00' },
+    history: [
+      { county_updated: '2026-11-03T20:12:00-08:00', yes: 4186, no: 1934 },
+      { county_updated: '2026-11-03T23:04:00-08:00', yes: 5169, no: 2311 },
+      { county_updated: '2026-11-05T16:26:00-08:00', yes: 6158, no: 2792 },
+      { county_updated: '2026-11-06T16:31:00-08:00', yes: 6974, no: 3046 },
+      { county_updated: '2026-11-09T16:28:00-08:00', yes: 7645, no: 3245 }
+    ]
+  };
+
+  var params = new URLSearchParams(location.search);
+  var DEMO = params.get('demo') === '1';
+  // In demo mode, pretend it's just after the last sample update so the schedule reads right.
+  var nowMs = function () { return DEMO ? new Date(SAMPLE.latest.county_updated).getTime() + 60000 : Date.now(); };
+  var PASS_HALF = '50% + 1';
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    pill: $('pill'), pillText: $('pillText'), updated: $('updated'),
+    needle: $('needle'), zone: $('zone'), heroNum: $('heroNum'), heroLabel: $('heroLabel'), heroSub: $('heroSub'),
+    passLabel: $('passLabel'), loLabel: $('loLabel'), hiLabel: $('hiLabel'),
+    wobbleBtn: $('wobbleBtn'), wobbleState: $('wobbleState'),
+    countStat: $('countStat'), bar: $('bar'), barFill: $('barFill'), countNote: $('countNote'), nextUpdate: $('nextUpdate'),
+    moves: $('moves'), notifyBtn: $('notifyBtn'), shareBtn: $('shareBtn'), sched: $('sched'), sourceLink: $('sourceLink')
+  };
+
+  var state = { data: null, lastStamp: null, baseDeg: 0, mode: 'loading', wobble: !reduceMotion, notify: false, notifiedShare: null };
+
+  function store(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+  function recall(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+
+  var nf = new Intl.NumberFormat('en-US');
+  var fmt = function (n) { return nf.format(n); };
+  var dtShort = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  var dtLong = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  var hourOnly = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric' });
+
+  function pct(x) { return x.toFixed(1) + '%'; }
+  function thresholdPct(d) { return ((d && d.threshold) || 0.5) * 100; }
+
+  function shareOf(row) {
+    var total = row.yes + row.no;
+    return total > 0 ? (row.yes / total) * 100 : null;
+  }
+
+  function zoneFor(margin) {
+    if (margin < -12) return { cls: 'z1', text: 'NO COMFORTABLY AHEAD' };
+    if (margin < -3) return { cls: 'z2', text: 'NO AHEAD' };
+    if (margin <= 3) return { cls: 'z3', text: 'TOO CLOSE TO CALL' };
+    if (margin <= 12) return { cls: 'z4', text: 'YES AHEAD' };
+    return { cls: 'z5', text: 'YES COMFORTABLY AHEAD' };
+  }
+
+  function degFor(share, T) {
+    var off = Math.max(-SPAN, Math.min(SPAN, share - T));
+    return off * (90 / SPAN) * 0.97; // keep the needle just inside the ends
+  }
+
+  function setNeedle(deg) { el.needle.style.transform = 'rotate(' + deg.toFixed(2) + 'deg)'; }
+
+  function setPill(kind, text) {
+    el.pill.className = 'pill mono' + (kind ? ' ' + kind : '');
+    el.pillText.textContent = text;
+  }
+
+  // A release counts as done once its time passes, or once the county posts within 3 hours before it.
+  function isDone(s, now, lastUpd) {
+    var t = new Date(s.t).getTime();
+    return t <= now || (lastUpd !== null && lastUpd > t - 3 * 3600000);
+  }
+
+  function nextUpdateLabel(now, lastUpd) {
+    for (var i = 0; i < SCHEDULE.length; i++) {
+      var s = SCHEDULE[i];
+      var start = new Date(s.t).getTime();
+      if (s.hourlyUntil) {
+        var end = new Date(s.hourlyUntil).getTime();
+        if (now >= start && now < end) {
+          var next = new Date(Math.ceil((now + 1) / 3600000) * 3600000);
+          return 'Tonight · around ' + hourOnly.format(next) + ' (hourly)';
+        }
+      }
+      if (!isDone(s, now, lastUpd)) return s.label;
+    }
+    return 'None scheduled';
+  }
+
+  function renderSchedule(now, lastUpd) {
+    var nextIdx = -1;
+    for (var i = 0; i < SCHEDULE.length; i++) {
+      if (!isDone(SCHEDULE[i], now, lastUpd)) { nextIdx = i; break; }
+    }
+    el.sched.innerHTML = '';
+    SCHEDULE.forEach(function (s, i) {
+      var li = document.createElement('li');
+      if (isDone(s, now, lastUpd)) li.className = 'past';
+      if (i === nextIdx) li.className = 'is-next';
+      var a = document.createElement('span'); a.textContent = s.label;
+      var b = document.createElement('span'); b.textContent = s.note || '';
+      li.appendChild(a); li.appendChild(b);
+      el.sched.appendChild(li);
+    });
+  }
+
+  function renderMoves(history) {
+    el.moves.innerHTML = '';
+    if (!history || !history.length) {
+      var li = document.createElement('li'); li.className = 'empty';
+      li.textContent = 'Each county update will show up here.';
+      el.moves.appendChild(li);
+      return;
+    }
+    var rows = history.filter(function (h) { return h.yes + h.no > 0; });
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var h = rows[i];
+      var s = shareOf(h);
+      var li2 = document.createElement('li');
+      var when = document.createElement('span'); when.className = 'when';
+      when.textContent = h.county_updated ? dtShort.format(new Date(h.county_updated)) : 'Update ' + (i + 1);
+      var right = document.createElement('span'); right.className = 'right';
+      var sh = document.createElement('span'); sh.className = 'share mono'; sh.textContent = pct(s);
+      var chip = document.createElement('span'); chip.className = 'delta mono';
+      if (i === 0) {
+        chip.textContent = 'FIRST';
+        chip.setAttribute('aria-label', 'first count');
+      } else {
+        var d = s - shareOf(rows[i - 1]);
+        var r = Math.round(d * 10) / 10;
+        if (r > 0) { chip.className += ' up'; chip.textContent = '▲ ' + r.toFixed(1); chip.setAttribute('aria-label', 'up ' + r.toFixed(1) + ' points'); }
+        else if (r < 0) { chip.className += ' down'; chip.textContent = '▼ ' + Math.abs(r).toFixed(1); chip.setAttribute('aria-label', 'down ' + Math.abs(r).toFixed(1) + ' points'); }
+        else { chip.textContent = '0.0'; chip.setAttribute('aria-label', 'no change'); }
+      }
+      right.appendChild(sh); right.appendChild(chip);
+      li2.appendChild(when); li2.appendChild(right);
+      el.moves.appendChild(li2);
+    }
+  }
+
+  function render(d) {
+    var now = nowMs();
+    var T = thresholdPct(d);
+    el.passLabel.textContent = T === 50 ? 'PASS LINE 50%' : 'PASS LINE ' + (Math.round(T * 10) / 10) + '%';
+    el.loLabel.textContent = Math.round(T - SPAN) + '%';
+    el.hiLabel.textContent = Math.round(T + SPAN) + '%';
+    if (d.source_url) el.sourceLink.href = d.source_url;
+    var L = d.latest || { yes: 0, no: 0 };
+    var lastUpd = L.county_updated ? new Date(L.county_updated).getTime() : null;
+    renderSchedule(now, lastUpd);
+    el.nextUpdate.textContent = nextUpdateLabel(now, lastUpd);
+
+    var total = L.yes + L.no;
+    var share = shareOf(L);
+
+    if (DEMO) { setPill('sample', 'SAMPLE DATA'); el.updated.textContent = 'Made-up numbers, not real results'; }
+    else if (d.status === 'final') { setPill('', 'CERTIFIED'); }
+    else if (total > 0) { setPill('live', 'LIVE COUNT'); }
+    else { setPill('', 'WAITING'); }
+    if (!DEMO) {
+      el.updated.textContent = L.county_updated ? 'County update: ' + dtLong.format(new Date(L.county_updated)) : 'First results Tue, Nov 3 at 8:10 PM';
+    }
+
+    if (share === null) {
+      state.mode = 'pre';
+      state.baseDeg = 0;
+      el.zone.className = 'zone mono z3';
+      el.zone.textContent = 'WAITING FOR THE FIRST COUNT';
+      el.heroNum.textContent = '8:10 PM';
+      el.heroLabel.textContent = 'first results, Tue Nov 3';
+      el.heroSub.textContent = T === 50 ? 'Pass line: ' + PASS_HALF + ' vote' : 'Pass line: ' + (Math.round(T * 10) / 10) + '%';
+      el.countStat.textContent = '0';
+      el.bar.hidden = true;
+      el.countNote.textContent = 'Counting starts when polls close at 8 PM.';
+    } else {
+      state.mode = d.status === 'final' ? 'final' : 'live';
+      state.baseDeg = degFor(share, T);
+      var margin = share - T;
+      var z = zoneFor(margin);
+      if (d.status === 'final') z = { cls: margin > 0 ? 'z5' : 'z1', text: margin > 0 ? 'MEASURE Y PASSED' : 'MEASURE Y FAILED' };
+      el.zone.className = 'zone mono ' + z.cls;
+      el.zone.textContent = z.text;
+      el.heroNum.textContent = pct(share);
+      el.heroLabel.textContent = d.status === 'final' ? 'YES, final' : 'YES so far';
+      if (T === 50) {
+        var lead = L.yes - L.no;
+        el.heroSub.textContent = (lead > 0 ? 'YES leads by ' + fmt(lead) + ' votes' : lead < 0 ? 'YES trails by ' + fmt(-lead) + ' votes' : 'Tied') + ' · pass line ' + PASS_HALF;
+      } else {
+        var over = L.yes - Math.ceil((T / 100) * total);
+        el.heroSub.textContent = (over >= 0 ? fmt(over) + ' votes above' : fmt(-over) + ' votes short of') + ' the ' + (Math.round(T * 10) / 10) + '% line';
+      }
+      if (d.expected_votes) {
+        var p = Math.min(100, Math.round((total / d.expected_votes) * 100));
+        el.countStat.textContent = fmt(total) + ' of ~' + fmt(d.expected_votes) + ' (' + p + '%)';
+        el.bar.hidden = false;
+        el.barFill.style.width = p + '%';
+        el.countNote.textContent = pct(share) + ' YES so far. The expected total is our estimate.';
+      } else {
+        el.countStat.textContent = fmt(total);
+        el.bar.hidden = true;
+        el.countNote.textContent = "The county doesn't publish how many Belmont ballots are left.";
+      }
+    }
+    setNeedle(state.baseDeg);
+    renderMoves(d.history);
+    maybeNotify(d, share);
+  }
+
+  function renderError() {
+    state.mode = 'error';
+    setPill('error', 'CAN’T CONNECT');
+    el.updated.textContent = '';
+    el.zone.className = 'zone mono z1';
+    el.zone.textContent = 'NUMBERS NOT LOADING';
+    el.heroNum.textContent = '–';
+    el.heroLabel.textContent = 'YES so far';
+    el.heroSub.innerHTML = '';
+    el.heroSub.appendChild(document.createTextNode('Try again in a minute, or check the '));
+    var a = document.createElement('a'); a.href = COUNTY_URL; a.textContent = "county's results page";
+    el.heroSub.appendChild(a); el.heroSub.appendChild(document.createTextNode('.'));
+    renderSchedule(nowMs(), null);
+    el.nextUpdate.textContent = nextUpdateLabel(nowMs(), null);
+    renderMoves([]);
+  }
+
+  function maybeNotify(d, share) {
+    var stamp = d.latest && d.latest.county_updated;
+    var isNew = stamp && stamp !== state.lastStamp;
+    var first = state.lastStamp === null;
+    state.lastStamp = stamp || state.lastStamp;
+    if (!state.notify || share === null) return;
+    if (state.notifiedShare === null) { state.notifiedShare = share; return; }
+    if (isNew && !first && Math.abs(share - state.notifiedShare) >= 1) {
+      var diff = share - state.notifiedShare;
+      try {
+        new Notification('Measure Y moved ' + (diff > 0 ? 'up ' : 'down ') + Math.abs(diff).toFixed(1) + ' pts', { body: 'YES is at ' + pct(share) + ' in the latest count.' });
+      } catch (e) {}
+      state.notifiedShare = share;
+    }
+  }
+
+  function load() {
+    if (DEMO) { state.data = SAMPLE; render(SAMPLE); return; }
+    fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { state.data = d; render(d); })
+      .catch(function () { if (!state.data) renderError(); });
+  }
+
+  // Wobble: a small jitter on the needle only. The numbers never change.
+  function setWobble(on) {
+    state.wobble = on;
+    el.wobbleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    el.wobbleState.textContent = on ? 'ON' : 'OFF';
+    store('myw-wobble', on ? '1' : '0');
+    if (!on) setNeedle(state.baseDeg);
+  }
+  var savedWobble = recall('myw-wobble');
+  if (savedWobble !== null) state.wobble = savedWobble === '1';
+  setWobble(state.wobble);
+  el.wobbleBtn.addEventListener('click', function () { setWobble(!state.wobble); });
+  setInterval(function () {
+    if (!state.wobble || state.mode === 'final' || state.mode === 'error' || state.mode === 'loading') return;
+    var amp = state.mode === 'pre' ? 2.2 : 1.4; // degrees
+    setNeedle(state.baseDeg + (Math.random() * 2 - 1) * amp);
+  }, 650);
+
+  // Notifications while the tab is open.
+  if ('Notification' in window) {
+    el.notifyBtn.hidden = false;
+    el.notifyBtn.addEventListener('click', function () {
+      if (state.notify) { state.notify = false; el.notifyBtn.setAttribute('aria-pressed', 'false'); return; }
+      Promise.resolve(Notification.permission === 'granted' ? 'granted' : Notification.requestPermission()).then(function (p) {
+        if (p !== 'granted') return;
+        state.notify = true;
+        state.notifiedShare = state.data && state.data.latest ? shareOf(state.data.latest) : null;
+        el.notifyBtn.setAttribute('aria-pressed', 'true');
+      });
+    });
+  }
+
+  // Share.
+  el.shareBtn.addEventListener('click', function () {
+    var url = location.origin + location.pathname;
+    var done = function (msg) {
+      el.shareBtn.textContent = msg;
+      setTimeout(function () { el.shareBtn.textContent = 'Send to the group chat'; }, 2500);
+    };
+    if (navigator.share) {
+      navigator.share({ title: 'Measure Y Watch', text: "Live count for Belmont's Measure Y", url: url }).catch(function () {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { done('Link copied. Go stir the pot.'); }, function () { done(url); });
+    } else {
+      done(url);
+    }
+  });
+
+  load();
+  setInterval(load, POLL_MS);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) load(); });
+})();
+</script>
+</body>
+</html>

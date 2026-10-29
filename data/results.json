@@ -1,0 +1,16 @@
+{
+  "status": "pre",
+  "contest": "City of Belmont, Measure Y (Majority Approval Required)",
+  "threshold": 0.5,
+  "expected_votes": null,
+  "source_url": "https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html",
+  "latest": {
+    "yes": 0,
+    "no": 0,
+    "county_updated": null,
+    "county_ballots_counted": 0,
+    "fetched_at": null,
+    "source": "placeholder"
+  },
+  "history": []
+}
