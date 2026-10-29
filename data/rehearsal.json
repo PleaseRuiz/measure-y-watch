@@ -5,11 +5,11 @@
   "expected_votes": null,
   "source_url": "https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html",
   "latest": {
-    "yes": 4105,
-    "no": 3702,
-    "county_updated": "2026-10-28T22:22:42-07:00",
-    "county_ballots_counted": 121880,
-    "fetched_at": "2026-10-28T22:22:42-07:00",
+    "yes": 5802,
+    "no": 5905,
+    "county_updated": "2026-10-28T22:29:41-07:00",
+    "county_ballots_counted": 188215,
+    "fetched_at": "2026-10-28T22:29:41-07:00",
     "source": "rehearsal"
   },
   "history": [
@@ -27,6 +27,30 @@
       "county_updated": "2026-10-28T22:22:42-07:00",
       "county_ballots_counted": 121880,
       "fetched_at": "2026-10-28T22:22:42-07:00",
+      "source": "rehearsal"
+    },
+    {
+      "yes": 4950,
+      "no": 4301,
+      "county_updated": "2026-10-28T22:25:03-07:00",
+      "county_ballots_counted": 150312,
+      "fetched_at": "2026-10-28T22:25:03-07:00",
+      "source": "rehearsal"
+    },
+    {
+      "yes": 5391,
+      "no": 5240,
+      "county_updated": "2026-10-28T22:27:22-07:00",
+      "county_ballots_counted": 171940,
+      "fetched_at": "2026-10-28T22:27:22-07:00",
+      "source": "rehearsal"
+    },
+    {
+      "yes": 5802,
+      "no": 5905,
+      "county_updated": "2026-10-28T22:29:41-07:00",
+      "county_ballots_counted": 188215,
+      "fetched_at": "2026-10-28T22:29:41-07:00",
       "source": "rehearsal"
     }
   ]
