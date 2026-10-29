@@ -80,8 +80,8 @@ jobs:
       - name: Build site
         run: |
           mkdir _site
-          cp index.html _site/
-          cp -r data _site/
+          cp index.html forecast.html _site/
+          cp -r data js _site/
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
@@ -142,8 +142,8 @@ jobs:
       - name: Build site
         run: |
           mkdir _site
-          cp index.html _site/
-          cp -r data _site/
+          cp index.html forecast.html _site/
+          cp -r data js _site/
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

@@ -32,6 +32,8 @@ on:
     branches: [main]
     paths:
       - index.html
+      - forecast.html
+      - js/**
       - config.json
       - data/**
       - .github/workflows/update.yml
@@ -110,8 +112,8 @@ jobs:
         if: steps.live.outputs.behind == 'true' || github.event_name == 'push'
         run: |
           mkdir _site
-          cp index.html _site/
-          cp -r data _site/
+          cp index.html forecast.html _site/
+          cp -r data js _site/
 
       - name: Upload site
         if: steps.live.outputs.behind == 'true' || github.event_name == 'push'

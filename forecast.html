@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peanut's Needle · Measure Y Watch</title>
+<meta name="description" content="A just-for-fun forecast of Belmont's Measure Y, with the full methodology. Not official results.">
+<meta property="og:title" content="Peanut's Needle · Measure Y Watch">
+<meta property="og:description" content="A just-for-fun forecast of Belmont's Measure Y. Not official results, not affiliated with The New York Times.">
+<meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1114" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F7; --card:#FFFFFF; --ink:#111418; --ink-2:#3A424B; --muted:#5B6570;
+  --line:#E6E9EE; --border:#D5DAE1; --track:#E3E7EC; --shadow:0 1px 2px rgba(17,20,24,.06);
+  --n3:#B5441A; --n2:#D95C22; --n1:#EBAA85; --tu:#D9DEE4; --y1:#8BD9C2; --y2:#1FA37F; --y3:#0B6B55;
+  --t-no:#B5441A; --t-tu:#3E4650; --t-yes:#0B7A61;
+  --needle:#111418; --band:rgba(17,20,24,.10);
+  --accent:#0B7A61; --sample:#9A5B00; --fun:#7A4CC2; --btn:#111418; --btn-ink:#FFFFFF;
+  --pn-fur:#E8B98C; --pn-ear:#C98D5A; --pn-curl:#B97C49; --pn-muzzle:#F5DEC3; --pn-ink:#2A1D15; --pn-tongue:#E7848C; --pn-ring:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1114; --card:#171B20; --ink:#EEF1F4; --ink-2:#C9D1D9; --muted:#9AA5B0;
+    --line:#232931; --border:#2E353D; --track:#272D34; --shadow:none;
+    --n3:#F08A55; --n2:#E0662A; --n1:#8C4F33; --tu:#3A434D; --y1:#2D7D69; --y2:#4FD6B0; --y3:#7FDCC0;
+    --t-no:#F08A55; --t-tu:#C9D1D9; --t-yes:#4FD6B0;
+    --needle:#F4F6F8; --band:rgba(244,246,248,.12);
+    --accent:#4FD6B0; --sample:#F2B33D; --fun:#C4A3F5; --btn:#EEF1F4; --btn-ink:#0E1114;
+    --pn-ring:#171B20;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+a{color:var(--accent)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.page{max-width:1120px;margin:0 auto;padding:24px 16px 40px}
+@media (min-width:720px){.page{padding:40px 32px 56px}}
+
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:14px 24px;margin-bottom:20px}
+.top h1{margin:0;font-size:clamp(28px,4.2vw,44px);font-weight:800;letter-spacing:-.025em;line-height:1.02}
+.sub{margin:6px 0 0;color:var(--muted);font-size:15px}
+.top-meta{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:700;letter-spacing:.12em;padding:7px 12px;border-radius:999px;border:1px solid var(--border);color:var(--ink-2);background:var(--card);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill.fun{color:var(--fun);border-color:currentColor}
+.pill.fun .dot{background:currentColor}
+.pill.sample{color:var(--sample);border-color:currentColor}
+.pill.sample .dot{background:currentColor}
+.pill.error{color:var(--t-no);border-color:currentColor}
+.pill.error .dot{background:currentColor}
+.updated{font-size:13px;color:var(--muted)}
+
+.tabs{display:flex;gap:4px;margin:0 0 18px;padding:4px;border:1px solid var(--border);border-radius:999px;background:var(--card);width:fit-content;max-width:100%}
+.tabs a{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.tabs a[aria-current="page"]{background:var(--btn);color:var(--btn-ink)}
+.tabs a:not([aria-current]):hover{color:var(--ink)}
+
+.grid{display:grid;gap:16px}
+@media (min-width:900px){.grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:20px;align-items:start}}
+.side{display:grid;gap:16px}
+@media (min-width:900px){.side{gap:20px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+@media (min-width:900px){.card{padding:26px 28px}}
+.h{margin:0;font-size:15px;font-weight:700}
+.label{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--muted)}
+.note{margin:0;font-size:13px;color:var(--muted)}
+
+/* Needle */
+.needle-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:22px}
+@media (min-width:900px){.needle-card{padding:30px 36px 28px}}
+.needle-title{margin:0;font-size:13px;letter-spacing:.14em;font-weight:700;color:var(--muted)}
+.gauge{width:100%;max-width:540px;height:auto;display:block;overflow:visible;margin-top:6px}
+.seg{fill:none;stroke-width:40}
+.g-n3{stroke:var(--n3)}.g-n2{stroke:var(--n2)}.g-n1{stroke:var(--n1)}.g-tu{stroke:var(--tu)}.g-y1{stroke:var(--y1)}.g-y2{stroke:var(--y2)}.g-y3{stroke:var(--y3)}
+.gauge-label{fill:var(--muted);font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-weight:700;letter-spacing:.08em}
+.band-arc{fill:none;stroke:var(--band);stroke-width:58;stroke-linecap:butt}
+.pointer{transform-box:view-box;transform-origin:200px 225px;transition:transform .7s cubic-bezier(.25,.8,.35,1)}
+.pointer line{stroke:var(--needle);stroke-width:5;stroke-linecap:round}
+.asleep .pointer line{opacity:.35}
+.asleep .seg{opacity:.45}
+.hub-ring{fill:var(--pn-ring)}
+.zone{margin:6px 0 2px;font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--t-tu)}
+.zone.no{color:var(--t-no)}.zone.yes{color:var(--t-yes)}
+.hero{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;gap:4px 12px}
+.hero-num{font-size:clamp(52px,8.4vw,84px);font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+.hero-label{font-size:17px;color:var(--muted)}
+.take{margin:14px 0 0;max-width:460px;font-size:15px;color:var(--ink-2)}
+.take strong{color:var(--ink)}
+.peanut-tilt{transition:transform .7s cubic-bezier(.25,.8,.35,1)}
+
+/* Peanut's moods (classes on the gauge svg) */
+.pn-closed,.pn-brows,.pn-zzz,.pn-tongue{display:none}
+.asleep .pn-open{display:none}
+.asleep .pn-closed,.asleep .pn-zzz{display:inline}
+.mood-tossup .pn-brows{display:inline}
+.mood-likely .pn-tongue,.mood-sure .pn-tongue,.mood-final .pn-tongue{display:inline}
+.mood-sure .pn-ear,.mood-final .pn-ear{animation:ear 1.4s ease-in-out infinite}
+.pn-ear-l{transform-origin:46px 80px}.pn-ear-r{transform-origin:154px 80px}
+@keyframes ear{0%,100%{transform:rotate(0)}50%{transform:rotate(-6deg)}}
+.pn-ear-r{animation-direction:reverse}
+.pn-zzz text{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;fill:var(--muted)}
+
+/* Estimate */
+.big-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:10px;font-variant-numeric:tabular-nums}
+.big-row .yes{font-size:28px;font-weight:800;color:var(--t-yes)}
+.big-row .no{font-size:28px;font-weight:800;color:var(--t-no)}
+.big-row small{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+.range{width:100%;height:auto;display:block;margin:12px 0 6px;overflow:visible}
+.range .rail{fill:var(--track)}
+.range .wide{fill:var(--y1);opacity:.55}
+.range .narrow{fill:var(--y2)}
+.range .mid{fill:var(--ink)}
+.range .pass{stroke:var(--ink);stroke-width:2}
+.range text{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;fill:var(--muted)}
+.facts{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px;font-size:14px;color:var(--ink-2)}
+.facts li{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:8px}
+.facts b{color:var(--ink);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+
+/* Chart */
+.chart{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
+.chart .grid-line{stroke:var(--line);stroke-width:1}
+.chart .mid-line{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4}
+.chart .path{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round}
+.chart .dot{fill:var(--card);stroke:var(--ink);stroke-width:2}
+.chart text{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;fill:var(--muted)}
+
+/* Assumptions + method */
+.assume{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.assume li{font-size:14px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:10px}
+.assume b{color:var(--ink)}
+.method{margin-top:20px}
+.method h2{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.method h3{margin:22px 0 6px;font-size:16px;font-weight:700}
+.method p,.method li{font-size:15px;color:var(--ink-2);max-width:72ch}
+.method ul{padding-left:20px}
+.method code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px}
+.method table{border-collapse:collapse;font-size:14px;width:100%;max-width:760px;margin:8px 0}
+.method th,.method td{border-top:1px solid var(--line);padding:8px 8px 8px 0;text-align:left;vertical-align:top;color:var(--ink-2)}
+.method th{color:var(--muted);font-weight:600;font-size:12px;letter-spacing:.06em}
+.table-wrap{overflow-x:auto}
+
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.foot{margin-top:28px;display:grid;gap:12px;font-size:13px;color:var(--muted)}
+.foot p{margin:0;max-width:80ch}
+
+@media (prefers-reduced-motion: reduce){
+  .pointer,.peanut-tilt{transition:none}
+  .pn-ear{animation:none !important}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Measure Y Watch</h1>
+      <p class="sub">Belmont community center tax · Nov 3, 2026 election</p>
+    </div>
+    <div class="top-meta">
+      <span class="pill mono fun" id="pill"><span class="dot" aria-hidden="true"></span><span id="pillText">FORECAST · JUST FOR FUN</span></span>
+      <span class="updated" id="updated"></span>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Views">
+    <a href="./">Live count</a>
+    <a href="forecast.html" aria-current="page">NYT forecast mode</a>
+  </nav>
+
+  <main class="grid">
+    <section class="card needle-card" aria-labelledby="needleHeading">
+      <h2 id="needleHeading" class="needle-title mono">PEANUT'S NEEDLE</h2>
+      <svg class="gauge asleep" id="gauge" viewBox="0 0 400 262" role="img" aria-labelledby="gaugeTitle">
+        <title id="gaugeTitle">Needle showing the chance Measure Y passes</title>
+        <g id="segs"></g>
+        <path class="band-arc" id="band" d=""/>
+        <text class="gauge-label" x="30" y="252" text-anchor="middle">NO</text>
+        <text class="gauge-label" x="370" y="252" text-anchor="middle">YES</text>
+        <g class="pointer" id="pointer"><line x1="200" y1="225" x2="200" y2="66"/></g>
+        <circle class="hub-ring" cx="200" cy="225" r="47"/>
+        <g class="peanut-tilt" id="peanutTilt" style="transform-box:view-box;transform-origin:200px 225px">
+          <svg x="154" y="176" width="92" height="92" viewBox="0 0 200 200" aria-hidden="true">
+            <g class="pn-ear pn-ear-l" fill="var(--pn-ear)">
+              <ellipse cx="46" cy="118" rx="22" ry="40"/>
+              <circle cx="36" cy="92" r="13"/><circle cx="32" cy="112" r="13"/><circle cx="34" cy="132" r="13"/><circle cx="42" cy="152" r="13"/><circle cx="55" cy="157" r="11"/>
+            </g>
+            <g class="pn-ear pn-ear-r" fill="var(--pn-ear)">
+              <ellipse cx="154" cy="118" rx="22" ry="40"/>
+              <circle cx="164" cy="92" r="13"/><circle cx="168" cy="112" r="13"/><circle cx="166" cy="132" r="13"/><circle cx="158" cy="152" r="13"/><circle cx="145" cy="157" r="11"/>
+            </g>
+            <g fill="var(--pn-fur)">
+              <ellipse cx="100" cy="108" rx="56" ry="54"/>
+              <circle cx="62" cy="72" r="16"/><circle cx="82" cy="58" r="17"/><circle cx="100" cy="53" r="18"/><circle cx="118" cy="58" r="17"/><circle cx="138" cy="72" r="16"/>
+              <circle cx="90" cy="44" r="12"/><circle cx="110" cy="44" r="12"/><circle cx="100" cy="38" r="11"/>
+              <circle cx="52" cy="96" r="15"/><circle cx="148" cy="96" r="15"/>
+              <circle cx="56" cy="124" r="15"/><circle cx="144" cy="124" r="15"/>
+              <circle cx="70" cy="148" r="16"/><circle cx="130" cy="148" r="16"/><circle cx="100" cy="158" r="17"/>
+            </g>
+            <g fill="none" stroke="var(--pn-curl)" stroke-width="2" stroke-linecap="round" opacity=".55">
+              <path d="M78 52 q4 -5 8 0"/><path d="M96 45 q4 -5 8 0"/><path d="M114 52 q4 -5 8 0"/>
+              <path d="M58 88 q4 -5 8 0"/><path d="M134 88 q4 -5 8 0"/><path d="M60 118 q4 -5 8 0"/><path d="M132 118 q4 -5 8 0"/>
+            </g>
+            <ellipse cx="100" cy="132" rx="30" ry="24" fill="var(--pn-muzzle)"/>
+            <g class="pn-open">
+              <circle cx="79" cy="104" r="7.5" fill="var(--pn-ink)"/><circle cx="121" cy="104" r="7.5" fill="var(--pn-ink)"/>
+              <circle cx="76.5" cy="101.5" r="2.4" fill="#fff"/><circle cx="118.5" cy="101.5" r="2.4" fill="#fff"/>
+            </g>
+            <g class="pn-closed" fill="none" stroke="var(--pn-ink)" stroke-width="3" stroke-linecap="round">
+              <path d="M71 105 q8 6 16 0"/><path d="M113 105 q8 6 16 0"/>
+            </g>
+            <g class="pn-brows" fill="none" stroke="var(--pn-curl)" stroke-width="3.5" stroke-linecap="round">
+              <path d="M70 90 l14 -5"/><path d="M130 90 l-14 -5"/>
+            </g>
+            <path d="M90 121 q10 -7 20 0 q-1 9 -10 12 q-9 -3 -10 -12z" fill="var(--pn-ink)"/>
+            <ellipse cx="96" cy="121" rx="3" ry="1.8" fill="#fff" opacity=".5"/>
+            <path d="M100 133 v6 M100 139 q-7 7 -13 1 M100 139 q7 7 13 1" fill="none" stroke="var(--pn-ink)" stroke-width="2.4" stroke-linecap="round"/>
+            <path class="pn-tongue" d="M94 143 q6 15 12 0 z" fill="var(--pn-tongue)"/>
+            <g class="pn-zzz"><text x="150" y="40" font-size="26">z</text><text x="168" y="22" font-size="18">z</text></g>
+          </svg>
+        </g>
+      </svg>
+      <p class="zone mono" id="zone">PEANUT IS NAPPING</p>
+      <div class="hero" aria-live="polite">
+        <span class="hero-num" id="heroNum">8:10 PM</span>
+        <span class="hero-label" id="heroLabel">first county report, Tue Nov 3</span>
+      </div>
+      <p class="take" id="take">Peanut's needle wakes up with the first county report. Until then there's nothing to forecast.</p>
+    </section>
+
+    <div class="side">
+      <section class="card" aria-labelledby="estHeading">
+        <h2 class="h" id="estHeading">Peanut's estimate of the final count</h2>
+        <div id="estBody"><p class="note" style="margin-top:10px">Shows up after the first county report.</p></div>
+      </section>
+
+      <section class="card" aria-labelledby="movedHeading">
+        <h2 class="h" id="movedHeading">How the needle moved</h2>
+        <div id="movedBody"><p class="note" style="margin-top:10px">One point per county update.</p></div>
+      </section>
+
+      <section class="card" aria-labelledby="assumeHeading">
+        <h2 class="h" id="assumeHeading">What Peanut is assuming</h2>
+        <ul class="assume" id="assume"></ul>
+        <p class="note" style="margin-top:12px"><a href="#method">How this works</a></p>
+      </section>
+    </div>
+  </main>
+
+  <section class="card method" id="method" aria-labelledby="methodHeading">
+    <h2 id="methodHeading">How Peanut's Needle works</h2>
+    <p>This is a just-for-fun forecast for people who like election-night needles. The <a href="./">Live count</a> tab shows only the county's actual numbers; this tab guesses where those numbers will end up. It's an homage to The New York Times' election needle and isn't affiliated with or endorsed by the Times. Peanut is a small doodle and the needle's mascot. Peanut does not do math; the code below does.</p>
+
+    <h3>What goes in</h3>
+    <p>Only what San Mateo County publishes for Measure Y at each update: the YES and NO totals and the county's "Website Updated" time. Nothing about individual voters is used or stored.</p>
+
+    <h3>The idea</h3>
+    <ul>
+      <li><b>The first report is the baseline.</b> The 8:10 PM report is mail ballots the county had by Sunday. Those voters skew older and more settled, so their YES share isn't the final answer, but it's the anchor.</li>
+      <li><b>Later ballots come in two batches that can lean differently.</b> Election-night updates (mostly people who voted in person at vote centers, plus more mail) and post-election updates (mail dropped off on Election Day or arriving late, and provisional ballots). Each batch gets a "lean": how much more or less YES it is than the early mail.</li>
+      <li><b>The leans start from San Mateo County history and learn from the night.</b> Before a batch is counted, Peanut uses a prior from past county elections. As increments arrive, Peanut compares each one's YES share with the baseline and updates the lean (a standard Bayesian normal update, noisier for small increments).</li>
+      <li><b>How many votes are left</b> combines a turnout estimate for Belmont with how much of its final count the county usually finishes by each release. Early on this is uncertain; by the last scheduled update it's small.</li>
+      <li><b>Then it simulates.</b> Peanut draws 40,000 possible versions of the rest of the count from those uncertainties and counts how often YES ends above 50%. That's the chance on the needle. The simulations are seeded from the data, so everyone sees the same number for the same update.</li>
+    </ul>
+
+    <h3>The wobble</h3>
+    <p id="wobbleText">On the Live count tab the wobble is decoration. Here it means something: the needle wobbles across the range of chances Peanut gets when it nudges its assumptions about the uncounted ballots up and down by a typical amount. A wide wobble means the chance itself is shaky; when the count is nearly done, the needle sits still.</p>
+
+    <h3>The assumptions, in numbers</h3>
+    <div class="table-wrap"><table id="priorTable">
+      <thead><tr><th>Assumption</th><th>Value</th><th>Why</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+
+    <h3>Does it work?</h3>
+    <p id="calibText">We tested Peanut on thousands of made-up election nights. When the made-up world matches Peanut's assumptions, its 80% ranges contain the final result about 80% of the time. When the world is much more chaotic than Peanut assumes, Peanut gets overconfident, so the assumptions above are set on the wide side on purpose.</p>
+
+    <h3>What could go wrong</h3>
+    <ul>
+      <li>This election could break differently from past ones. Measure Y is a parcel tax paid by property owners, with an exemption for senior homeowners who apply, and that's unusual.</li>
+      <li>The county could count in a different order than usual, or post a correction.</li>
+      <li>If the first report we capture isn't the 8:10 PM early mail (say the scraper missed it), the baseline is muddier and Peanut widens its ranges.</li>
+    </ul>
+
+    <h3>Want to argue with Peanut?</h3>
+    <p>Every assumption lives in one file, <code>data/peanut-priors.json</code>, in the <a href="https://github.com/PleaseRuiz/measure-y-watch">project's GitHub repository</a>. Suggest a change there with your reasoning (aggregate numbers and public sources only). The model itself is in <code>js/peanut-model.js</code> and the tests in <code>tests/</code>.</p>
+  </section>
+
+  <footer class="foot">
+    <p>Just for fun. This forecast is not the official count and not a prediction anyone should bet on. Official numbers come from <a href="https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html">San Mateo County</a> and can change until it certifies on Dec 3. Not affiliated with The New York Times or the county.</p>
+  </footer>
+</div>
+
+<script src="js/peanut-model.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var DATA_URL = 'data/results.json';
+  var PRIORS_URL = 'data/peanut-priors.json';
+  var POLL_MS = 60000;
+  var TZ = 'America/Los_Angeles';
+
+  // Sample numbers for ?demo=1 only (the same made-up count as the Live count tab's demo).
+  var SAMPLE = {
+    status: 'counting', threshold: 0.5,
+    history: [
+      { county_updated: '2026-11-03T20:12:00-08:00', yes: 4186, no: 1934 },
+      { county_updated: '2026-11-03T23:04:00-08:00', yes: 5169, no: 2311 },
+      { county_updated: '2026-11-05T16:26:00-08:00', yes: 6158, no: 2792 },
+      { county_updated: '2026-11-06T16:31:00-08:00', yes: 6974, no: 3046 },
+      { county_updated: '2026-11-09T16:28:00-08:00', yes: 7645, no: 3245 }
+    ]
+  };
+
+  var params = new URLSearchParams(location.search);
+  var DEMO = params.get('demo') === '1';
+  var REHEARSAL = params.get('rehearsal') === '1';
+  if (REHEARSAL) DATA_URL = 'data/rehearsal.json';
+  if (DEMO || REHEARSAL) document.querySelectorAll('.tabs a').forEach(function (a) { a.href = a.getAttribute('href') + location.search; });
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    pill: $('pill'), pillText: $('pillText'), updated: $('updated'), gauge: $('gauge'), segs: $('segs'), band: $('band'),
+    pointer: $('pointer'), tilt: $('peanutTilt'), zone: $('zone'), heroNum: $('heroNum'), heroLabel: $('heroLabel'), take: $('take'),
+    estBody: $('estBody'), movedBody: $('movedBody'), assume: $('assume'), priorTable: $('priorTable')
+  };
+
+  var nf = new Intl.NumberFormat('en-US');
+  var fmt = function (n) { return nf.format(Math.round(n)); };
+  // Rounded counts for estimates, so they don't look more precise than they are.
+  var approx = function (n) { var step = n >= 1000 ? 100 : 10; return nf.format(Math.round(n / step) * step); };
+  var dtShort = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  var dtLong = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  var pct1 = function (x) { return (100 * x).toFixed(1) + '%'; };
+  var pts = function (x) { var v = 100 * x; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + ' pts'; };
+  function chanceText(p) {
+    if (p > 0.99) return '>99%';
+    if (p < 0.01) return '<1%';
+    return Math.round(100 * p) + '%';
+  }
+
+  // ---------- gauge ----------
+
+  var CX = 200, CY = 225, R = 160;
+  var ZONES = [
+    { to: 0.05, cls: 'g-n3', name: 'VERY LIKELY FAILS', side: 'no' },
+    { to: 0.25, cls: 'g-n2', name: 'LIKELY FAILS', side: 'no' },
+    { to: 0.40, cls: 'g-n1', name: 'LEANS NO', side: 'no' },
+    { to: 0.60, cls: 'g-tu', name: 'TOSSUP', side: 'tu' },
+    { to: 0.75, cls: 'g-y1', name: 'LEANS YES', side: 'yes' },
+    { to: 0.95, cls: 'g-y2', name: 'LIKELY PASSES', side: 'yes' },
+    { to: 1.00, cls: 'g-y3', name: 'VERY LIKELY PASSES', side: 'yes' }
+  ];
+  function point(p, r) { var th = Math.PI * (1 - p); return [CX + r * Math.cos(th), CY - r * Math.sin(th)]; }
+  function arc(p0, p1, r) {
+    var a = point(p0, r), b = point(p1, r);
+    return 'M' + a[0].toFixed(2) + ' ' + a[1].toFixed(2) + ' A' + r + ' ' + r + ' 0 0 1 ' + b[0].toFixed(2) + ' ' + b[1].toFixed(2);
+  }
+  (function drawSegments() {
+    var from = 0, gap = 0.006, html = '';
+    ZONES.forEach(function (z, i) {
+      var a = from + (i ? gap / 2 : 0), b = z.to - (i < ZONES.length - 1 ? gap / 2 : 0);
+      html += '<path class="seg ' + z.cls + '" d="' + arc(a, b, R) + '"/>';
+      from = z.to;
+    });
+    el.segs.innerHTML = html;
+  })();
+  function zoneFor(p) { for (var i = 0; i < ZONES.length; i++) if (p <= ZONES[i].to) return ZONES[i]; return ZONES[ZONES.length - 1]; }
+  function angleFor(p) { return (p - 0.5) * 180 * 0.97; }
+
+  var view = { p: 0.5, lo: 0.5, hi: 0.5, live: false };
+  function setPointer(p) {
+    var a = angleFor(p);
+    el.pointer.style.transform = 'rotate(' + a.toFixed(2) + 'deg)';
+    el.tilt.style.transform = 'rotate(' + (a / 9).toFixed(2) + 'deg)';
+  }
+  setInterval(function () {
+    if (!view.live || reduceMotion || view.hi - view.lo < 0.004) return;
+    setPointer(view.lo + Math.random() * (view.hi - view.lo));
+  }, 700);
+
+  function setMood(mood, asleep) {
+    var cls = 'gauge' + (asleep ? ' asleep' : '') + (mood ? ' mood-' + mood : '');
+    el.gauge.setAttribute('class', cls);
+  }
+
+  // ---------- rendering ----------
+
+  function renderWaiting(priors) {
+    view.live = false;
+    setMood('', true);
+    setPointer(0.5);
+    el.band.setAttribute('d', '');
+    el.zone.className = 'zone mono';
+    el.zone.textContent = 'PEANUT IS NAPPING';
+    el.heroNum.textContent = '8:10 PM';
+    el.heroLabel.textContent = 'first county report, Tue Nov 3';
+    el.take.textContent = "Peanut's needle wakes up with the first county report. Until then there's nothing to forecast.";
+    renderAssumptions(null, priors);
+  }
+
+  function takeFor(r) {
+    var p = r.pYes, side = p >= 0.5 ? 'passing' : 'failing', rem = r.remaining[0.5];
+    if (r.status === 'final') return p >= 0.5 ? "It's certified: Measure Y passed. Peanut is off duty." : "It's certified: Measure Y failed. Peanut is off duty.";
+    if (rem < 0.01 * r.totalVotes[0.5] + 25) return 'Only about ' + approx(rem) + ' votes on Y are left. Peanut thinks this one is basically settled.';
+    var z = zoneFor(p).name;
+    if (z === 'TOSSUP') return 'Peanut is pacing. This one could go either way, with about ' + approx(rem) + ' votes on Y still to count.';
+    if (z.indexOf('LEANS') === 0) return "Peanut's ears are up. Measure Y is leaning toward " + side + ', but about ' + approx(rem) + ' votes on Y are still out.';
+    if (z.indexOf('VERY') === 0) return 'Peanut has settled in. Measure Y is very likely ' + side + ' unless the late ballots break in a way they rarely do.';
+    return "Peanut's tail is going. Measure Y is likely " + side + ', though about ' + approx(rem) + ' votes on Y are still out.';
+  }
+
+  function moodFor(r) {
+    if (r.status === 'final') return 'final';
+    var d = Math.abs(r.pYes - 0.5);
+    if (d <= 0.1) return 'tossup';
+    if (d <= 0.25) return 'lean';
+    if (d <= 0.45) return 'likely';
+    return 'sure';
+  }
+
+  function renderNeedle(r, band) {
+    var z = zoneFor(r.pYes);
+    view.p = r.pYes; view.lo = Math.min(band.lo, r.pYes); view.hi = Math.max(band.hi, r.pYes); view.live = r.status !== 'final';
+    setMood(moodFor(r), false);
+    setPointer(r.pYes);
+    el.band.setAttribute('d', view.hi - view.lo >= 0.004 ? arc(Math.max(0.001, view.lo), Math.min(0.999, view.hi), R) : '');
+    el.zone.className = 'zone mono ' + (z.side === 'tu' ? '' : z.side);
+    el.zone.textContent = r.status === 'final' ? (r.pYes >= 0.5 ? 'PASSED' : 'FAILED') : z.name;
+    el.heroNum.textContent = r.status === 'final' ? (r.pYes >= 0.5 ? 'Passed' : 'Failed') : chanceText(r.pYes);
+    el.heroLabel.textContent = r.status === 'final' ? 'certified' : 'chance Measure Y passes';
+    el.take.textContent = takeFor(r);
+  }
+
+  function renderEstimate(r) {
+    var q = r.finalShare, lo = q[0.05], hi = q[0.95];
+    var half = Math.max(0.04, Math.ceil(Math.max(Math.abs(lo - 0.5), Math.abs(hi - 0.5)) * 100 + 1) / 100);
+    var W = 340, x = function (s) { return 10 + (s - (0.5 - half)) / (2 * half) * (W - 20); };
+    var svg = '<svg class="range" viewBox="0 0 ' + W + ' 54" role="img" aria-label="Estimated final YES share ' + pct1(q[0.5]) + ', 80% range ' + pct1(q[0.1]) + ' to ' + pct1(q[0.9]) + '">' +
+      '<rect class="rail" x="10" y="14" width="' + (W - 20) + '" height="14" rx="7"/>' +
+      '<rect class="wide" x="' + x(q[0.05]).toFixed(1) + '" y="14" width="' + Math.max(2, x(q[0.95]) - x(q[0.05])).toFixed(1) + '" height="14" rx="7"/>' +
+      '<rect class="narrow" x="' + x(q[0.25]).toFixed(1) + '" y="14" width="' + Math.max(2, x(q[0.75]) - x(q[0.25])).toFixed(1) + '" height="14" rx="7"/>' +
+      '<line class="pass" x1="' + x(0.5).toFixed(1) + '" y1="6" x2="' + x(0.5).toFixed(1) + '" y2="36"/>' +
+      '<circle class="mid" cx="' + x(q[0.5]).toFixed(1) + '" cy="21" r="5"/>' +
+      '<text x="10" y="50">' + Math.round(100 * (0.5 - half)) + '%</text>' +
+      '<text x="' + x(0.5).toFixed(1) + '" y="50" text-anchor="middle">50%</text>' +
+      '<text x="' + (W - 10) + '" y="50" text-anchor="end">' + Math.round(100 * (0.5 + half)) + '%</text></svg>';
+    var needs = '';
+    if (r.trailingNeeds && r.status !== 'final') {
+      var side = r.trailingNeeds.side;
+      needs = r.trailingNeeds.share > 1
+        ? '<li><span>' + side + ' to catch up</span><b>Not enough votes left</b></li>'
+        : '<li><span>' + side + ' would need</span><b>' + pct1(r.trailingNeeds.share) + ' of what’s left</b></li>';
+      var best = bestBatch(side);
+      if (best !== null) needs += '<li><span>Best batch for ' + side + ' so far</span><b>' + pct1(best) + '</b></li>';
+    }
+    el.estBody.innerHTML =
+      '<div class="big-row"><div><small>YES</small><span class="yes">' + pct1(q[0.5]) + '</span></div><div style="text-align:right"><small>NO</small><span class="no">' + pct1(1 - q[0.5]) + '</span></div></div>' +
+      svg +
+      '<p class="note">Likely between ' + pct1(q[0.1]) + ' and ' + pct1(q[0.9]) + ' YES (80% of simulations). The darker band is the middle half.</p>' +
+      '<ul class="facts">' +
+      '<li><span>Counted so far</span><b>' + pct1(r.counted.share) + ' YES of ' + fmt(r.counted.n) + '</b></li>' +
+      '<li><span>Votes on Y still out</span><b>' + (r.status === 'final' ? 'None' : 'about ' + approx(r.remaining[0.5]) + ' (' + approx(r.remaining[0.1]) + '–' + approx(r.remaining[0.9]) + ')') + '</b></li>' +
+      needs + '</ul>';
+  }
+
+  // The best share the trailing side has won in any single county update since the first report.
+  function bestBatch(side) {
+    var h = window.PeanutModel.cleanHistory(state.data || {}, state.priors), best = null;
+    for (var i = 1; i < h.length; i++) {
+      var dn = h[i].n - h[i - 1].n, dy = h[i].yes - h[i - 1].yes;
+      if (dn < 50 || dy < 0 || dy > dn) continue;
+      var share = side === 'YES' ? dy / dn : 1 - dy / dn;
+      if (best === null || share > best) best = share;
+    }
+    return best;
+  }
+
+  function renderMoved(traj) {
+    if (!traj.length) { el.movedBody.innerHTML = '<p class="note" style="margin-top:10px">One point per county update.</p>'; return; }
+    var W = 340, H = 150, padL = 34, padR = 10, padT = 10, padB = 26;
+    var n = traj.length;
+    var x = function (i) { return n === 1 ? (padL + W - padR) / 2 : padL + i * (W - padL - padR) / (n - 1); };
+    var y = function (p) { return padT + (1 - p) * (H - padT - padB); };
+    var d = traj.map(function (t, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(t.pYes).toFixed(1); }).join(' ');
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Chance Measure Y passes after each county update: ' +
+      traj.map(function (t) { return chanceText(t.pYes); }).join(', ') + '">' +
+      [0, 0.5, 1].map(function (p) {
+        return '<line class="' + (p === 0.5 ? 'mid-line' : 'grid-line') + '" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(p) + '" y2="' + y(p) + '"/>' +
+          '<text x="' + (padL - 6) + '" y="' + (y(p) + 4) + '" text-anchor="end">' + Math.round(p * 100) + '%</text>';
+      }).join('') +
+      '<path class="path" d="' + d + '"/>' +
+      traj.map(function (t, i) { return '<circle class="dot" cx="' + x(i).toFixed(1) + '" cy="' + y(t.pYes).toFixed(1) + '" r="4"/>'; }).join('') +
+      '<text x="' + x(0) + '" y="' + (H - 6) + '" text-anchor="' + (n === 1 ? 'middle' : 'start') + '">' + dtShort.format(new Date(traj[0].t)) + '</text>' +
+      (n > 1 ? '<text x="' + x(n - 1) + '" y="' + (H - 6) + '" text-anchor="end">' + dtShort.format(new Date(traj[n - 1].t)) + '</text>' : '') +
+      '</svg>';
+    el.movedBody.innerHTML = svg + '<p class="note">Chance Measure Y passes after each county update.</p>';
+  }
+
+  function renderAssumptions(r, priors) {
+    var L = priors.leans, items = [];
+    if (r && r.status !== 'final') {
+      items.push('<li><b>Baseline:</b> the ' + (r.baseMixed ? 'first update we have' : '8:10 PM early mail') + ' was ' + pct1(r.baseShare) + ' YES.</li>');
+      items.push('<li><b>Election-night ballots:</b> expected to run ' + pts(r.leans.electionNight.mean) + ' vs the baseline (give or take ' + (100 * r.leans.electionNight.sd).toFixed(1) + ').</li>');
+      items.push('<li><b>Post-election ballots:</b> expected to run ' + pts(r.leans.postElection.mean) + ' vs the baseline (give or take ' + (100 * r.leans.postElection.sd).toFixed(1) + ').</li>');
+      items.push('<li><b>Total votes on Y:</b> about ' + approx(r.totalVotes[0.5]) + ' (' + approx(r.totalVotes[0.1]) + '–' + approx(r.totalVotes[0.9]) + '), so about ' + Math.round(100 * r.countedFraction) + '% is counted.</li>');
+    } else if (r) {
+      items.push('<li>The count is certified, so there is nothing left to assume.</li>');
+    } else {
+      items.push('<li><b>Election-night ballots:</b> start at ' + pts(L.election_night.mean) + ' vs the early mail (give or take ' + (100 * L.election_night.sd).toFixed(1) + ').</li>');
+      items.push('<li><b>Post-election ballots:</b> start at ' + pts(L.post_election.mean) + ' vs the early mail (give or take ' + (100 * L.post_election.sd).toFixed(1) + ').</li>');
+      items.push('<li><b>Total votes on Y:</b> about ' + approx(priors.turnout.y_votes_median) + ' before any results.</li>');
+    }
+    el.assume.innerHTML = items.join('');
+  }
+
+  function renderPriorTable(priors) {
+    var rows = (priors.explain || []).map(function (e) {
+      return '<tr><td>' + esc(e.name) + '</td><td class="mono">' + esc(e.value) + '</td><td>' + esc(e.why) + '</td></tr>';
+    });
+    el.priorTable.querySelector('tbody').innerHTML = rows.join('') || '<tr><td colspan="3">See data/peanut-priors.json.</td></tr>';
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // ---------- data flow ----------
+
+  var state = { priors: null, key: null, data: null };
+
+  function setHeader(data) {
+    if (DEMO || REHEARSAL) { el.pill.className = 'pill mono sample'; el.pillText.textContent = 'SAMPLE DATA'; el.updated.textContent = 'Made-up numbers, not real results'; return; }
+    el.pill.className = 'pill mono fun'; el.pillText.textContent = 'FORECAST · JUST FOR FUN';
+    var L = data && data.latest;
+    el.updated.textContent = L && L.county_updated && (L.yes + L.no > 0) ? 'Based on the county update of ' + dtLong.format(new Date(L.county_updated)) : 'First results Tue, Nov 3 at 8:10 PM';
+  }
+
+  function compute(data) {
+    var priors = state.priors, M = window.PeanutModel, opts = { remapTimes: DEMO || REHEARSAL };
+    state.data = data;
+    var r = M.forecast(data, priors, opts);
+    setHeader(data);
+    if (r.status === 'waiting') { renderWaiting(priors); el.estBody.innerHTML = '<p class="note" style="margin-top:10px">Shows up after the first county report.</p>'; renderMoved([]); return; }
+    var band = { lo: r.pYes, hi: r.pYes };
+    if (r.status !== 'final') {
+      // The wobble: the chance Peanut gets when its lean assumptions are nudged one typical step each way.
+      [-1, 1].forEach(function (sgn) {
+        var p2 = JSON.parse(JSON.stringify(priors));
+        p2.leans.election_night.mean += sgn * priors.leans.election_night.sd;
+        p2.leans.post_election.mean += sgn * priors.leans.post_election.sd;
+        var alt = M.forecast(data, p2, { remapTimes: opts.remapTimes, sims: 12000 });
+        band.lo = Math.min(band.lo, alt.pYes); band.hi = Math.max(band.hi, alt.pYes);
+      });
+    }
+    renderNeedle(r, band);
+    renderEstimate(r);
+    renderMoved(M.trajectory(data, priors, { remapTimes: opts.remapTimes, sims: 12000 }));
+    renderAssumptions(r, priors);
+  }
+
+  function load() {
+    var dataP = DEMO ? Promise.resolve(SAMPLE) : fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    var priorsP = state.priors ? Promise.resolve(state.priors) : fetch(PRIORS_URL + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    Promise.all([dataP, priorsP]).then(function (res) {
+      var data = res[0];
+      if (!state.priors) { state.priors = res[1]; renderPriorTable(state.priors); }
+      var key = JSON.stringify([data.status, data.history]);
+      if (key === state.key) return;
+      state.key = key;
+      setTimeout(function () { compute(data); }, 0);
+    }).catch(function () {
+      if (state.key) return;
+      el.pill.className = 'pill mono error'; el.pillText.textContent = 'CAN’T CONNECT';
+      el.zone.className = 'zone mono no'; el.zone.textContent = 'NUMBERS NOT LOADING';
+      el.heroNum.textContent = '–'; el.heroLabel.textContent = 'chance Measure Y passes';
+      el.take.textContent = 'Try again in a minute. The Live count tab and the county site have the actual numbers.';
+    });
+  }
+
+  load();
+  if (!DEMO) setInterval(load, POLL_MS);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && !DEMO) load(); });
+})();
+</script>
+</body>
+</html>

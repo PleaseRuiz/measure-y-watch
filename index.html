@@ -57,6 +57,12 @@ a{color:var(--accent)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .updated{font-size:13px;color:var(--muted)}
 
+/* Tabs */
+.tabs{display:flex;gap:4px;margin:0 0 18px;padding:4px;border:1px solid var(--border);border-radius:999px;background:var(--card);width:fit-content;max-width:100%}
+.tabs a{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:600;color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.tabs a[aria-current="page"]{background:var(--btn);color:var(--btn-ink)}
+.tabs a:not([aria-current]):hover{color:var(--ink)}
+
 .grid{display:grid;gap:16px}
 @media (min-width:900px){.grid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:20px;align-items:start}}
 .side{display:grid;gap:16px}
@@ -155,6 +161,11 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     </div>
   </header>
 
+  <nav class="tabs" aria-label="Views">
+    <a href="./" aria-current="page">Live count</a>
+    <a href="forecast.html">NYT forecast mode</a>
+  </nav>
+
   <main class="grid">
     <section class="card dial-card" aria-labelledby="dialHeading">
       <h2 id="dialHeading" class="sr-only">Where YES stands</h2>
@@ -213,7 +224,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   </main>
 
   <footer class="foot">
-    <p>Numbers come from <a id="sourceLink" href="https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html">San Mateo County's semi-official results</a>. They can change until the county certifies on Dec 3. This page isn't run by the county, and the "expected" vote total is our estimate.</p>
+    <p>Numbers come from <a id="sourceLink" href="https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html">San Mateo County's semi-official results</a>. They can change until the county certifies on Dec 3. This page isn't run by the county. The needle shows YES as a share of the votes counted so far. It isn't a forecast, and its wobble is just for fun.</p>
     <details>
       <summary>County update schedule</summary>
       <ul class="sched" id="sched"></ul>
@@ -265,6 +276,8 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   // Rehearsal only (remove after the rehearsal): made-up updates from data/rehearsal.json.
   var REHEARSAL = params.get('rehearsal') === '1';
   if (REHEARSAL) DATA_URL = 'data/rehearsal.json';
+  // Keep demo or rehearsal mode when switching tabs.
+  if (DEMO || REHEARSAL) document.querySelectorAll('.tabs a').forEach(function (a) { a.href = a.getAttribute('href') + location.search; });
   // In demo mode, pretend it's just after the last sample update so the schedule reads right.
   var nowMs = function () { return DEMO ? new Date(SAMPLE.latest.county_updated).getTime() + 60000 : Date.now(); };
   var PASS_HALF = '50% + 1';

@@ -1,0 +1,87 @@
+{
+  "version": "draft-1",
+  "sims": 40000,
+  "turnout": {
+    "y_votes_median": 11800,
+    "y_votes_log_sd": 0.12
+  },
+  "schedule": [
+    {
+      "at": "2026-11-03T20:10:00-08:00",
+      "counted_share": 0.55,
+      "sd": 0.08
+    },
+    {
+      "at": "2026-11-04T03:00:00-08:00",
+      "counted_share": 0.72,
+      "sd": 0.06
+    },
+    {
+      "at": "2026-11-05T16:30:00-08:00",
+      "counted_share": 0.83,
+      "sd": 0.05
+    },
+    {
+      "at": "2026-11-06T16:30:00-08:00",
+      "counted_share": 0.88,
+      "sd": 0.04
+    },
+    {
+      "at": "2026-11-09T16:30:00-08:00",
+      "counted_share": 0.93,
+      "sd": 0.03
+    },
+    {
+      "at": "2026-11-12T09:30:00-08:00",
+      "counted_share": 0.96,
+      "sd": 0.02
+    },
+    {
+      "at": "2026-11-13T16:30:00-08:00",
+      "counted_share": 0.97,
+      "sd": 0.015
+    },
+    {
+      "at": "2026-11-16T16:30:00-08:00",
+      "counted_share": 0.985,
+      "sd": 0.01
+    },
+    {
+      "at": "2026-12-03T17:00:00-08:00",
+      "counted_share": 1.0,
+      "sd": 0.002
+    }
+  ],
+  "schedule_correlation": 0.7,
+  "phases": {
+    "first_report_ends": "2026-11-03T20:55:00-08:00",
+    "election_night_ends": "2026-11-04T08:00:00-08:00"
+  },
+  "leans": {
+    "election_night": {
+      "mean": -0.03,
+      "sd": 0.04
+    },
+    "post_election": {
+      "mean": 0.015,
+      "sd": 0.035
+    },
+    "correlation": 0.3,
+    "tail_df": 5
+  },
+  "noise": {
+    "increment_sd": 0.02,
+    "min_increment_votes": 50,
+    "remaining_batch_sd": 0.01,
+    "model_sd": 0.01,
+    "count_log_sd": 0.03
+  },
+  "demo_release_times": [
+    "2026-11-03T20:10:00-08:00",
+    "2026-11-03T22:00:00-08:00",
+    "2026-11-04T01:00:00-08:00",
+    "2026-11-05T16:30:00-08:00",
+    "2026-11-09T16:30:00-08:00",
+    "2026-11-13T16:30:00-08:00"
+  ]
+}
