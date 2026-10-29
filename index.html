@@ -108,7 +108,7 @@ a{color:var(--accent)}
 .moves{list-style:none;margin:10px 0 0;padding:0}
 @media (min-width:900px){.moves{max-height:296px;overflow-y:auto}}
 .moves li{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;border-top:1px solid var(--line)}
-.moves .when{font-size:14px;color:var(--ink-2)}
+.moves .when{font-size:14px;color:var(--ink-2);white-space:nowrap}
 .moves .right{display:flex;align-items:center;gap:10px}
 .moves .share{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
 .delta{min-width:74px;text-align:center;font-size:12px;font-weight:700;padding:4px 8px;border-radius:999px;background:var(--flat-bg);color:var(--flat-fg)}
@@ -224,7 +224,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   </main>
 
   <footer class="foot">
-    <p>Numbers come from <a id="sourceLink" href="https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html">San Mateo County's semi-official results</a>. They can change until the county certifies on Dec&nbsp;3. This page isn't run by the county. The needle shows YES as a share of the votes counted so far. It isn't a forecast, and its wobble is just for fun.</p>
+    <p>Numbers come from <a id="sourceLink" href="https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html">San Mateo County's semi-official results</a>. They can change until the county certifies on Dec&nbsp;3. This page isn't run by the county. The needle shows YES as a share of the votes counted so far. It isn't a forecast, and its wobble is just for fun. The forecast tab isn't affiliated with The New York Times.</p>
     <details>
       <summary>County update schedule</summary>
       <ul class="sched" id="sched"></ul>
@@ -300,7 +300,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
 
   var nf = new Intl.NumberFormat('en-US');
   var fmt = function (n) { return nf.format(n); };
-  var dtShort = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  var dtShort = new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   var dtLong = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   var hourOnly = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric' });
 
@@ -518,17 +518,17 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   }
 
   // Wobble: a small jitter on the needle only. The numbers never change.
-  function setWobble(on) {
+  function setWobble(on, save) {
     state.wobble = on;
     el.wobbleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     el.wobbleState.textContent = on ? 'ON' : 'OFF';
-    store('myw-wobble', on ? '1' : '0');
+    if (save) store('myw-wobble', on ? '1' : '0');
     if (!on) setNeedle(state.baseDeg);
   }
   var savedWobble = recall('myw-wobble');
   if (savedWobble !== null) state.wobble = savedWobble === '1';
   setWobble(state.wobble);
-  el.wobbleBtn.addEventListener('click', function () { setWobble(!state.wobble); });
+  el.wobbleBtn.addEventListener('click', function () { setWobble(!state.wobble, true); });
   setInterval(function () {
     if (!state.wobble || state.mode === 'final' || state.mode === 'error' || state.mode === 'loading') return;
     var amp = state.mode === 'pre' ? 2.2 : 1.4; // degrees

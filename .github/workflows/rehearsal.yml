@@ -18,7 +18,7 @@ on:
         required: false
         type: string
       county_updated:
-        description: "Practice entry: Website Updated time, e.g. 11/3/2026 8:10:45 PM (blank = now)"
+        description: "Practice entry: a Website Updated time a few minutes ago, e.g. 10/30/2026 7:45:00 PM (required)"
         required: false
         type: string
       allow_decrease:
@@ -80,8 +80,10 @@ jobs:
       - name: Build site
         run: |
           mkdir _site
-          cp index.html forecast.html _site/
-          cp -r data js _site/
+          cp index.html _site/
+          cp -r data _site/
+          # The forecast tab is optional: the live count still publishes if it's removed.
+          for f in forecast.html js; do if [ -e "$f" ]; then cp -r "$f" _site/; fi; done
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
@@ -142,8 +144,10 @@ jobs:
       - name: Build site
         run: |
           mkdir _site
-          cp index.html forecast.html _site/
-          cp -r data js _site/
+          cp index.html _site/
+          cp -r data _site/
+          # The forecast tab is optional: the live count still publishes if it's removed.
+          for f in forecast.html js; do if [ -e "$f" ]; then cp -r "$f" _site/; fi; done
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

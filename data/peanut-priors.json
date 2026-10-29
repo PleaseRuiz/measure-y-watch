@@ -1,6 +1,7 @@
 {
-  "version": "2026-10-29.3",
-  "sims": 40000,
+  "version": "2026-10-29.4",
+  "paused": false,
+  "sims": 20000,
   "turnout": {
     "y_votes_median": 11300,
     "y_votes_log_sd": 0.11
@@ -55,7 +56,7 @@
   "schedule_correlation": 0.7,
   "phases": {
     "first_report_ends": "2026-11-03T20:55:00-08:00",
-    "election_night_ends": "2026-11-04T08:00:00-08:00",
+    "election_night_ends": "2026-11-05T12:00:00-08:00",
     "vote_center_share": {
       "mean": 0.085,
       "sd": 0.025
@@ -98,7 +99,7 @@
     {
       "name": "Counted in the 8:10 PM report",
       "value": "48% (\u00b110)",
-      "why": "In past San Mateo County elections the first report held 31 to 49% of the final count, with mail received by the Friday before. This year it includes mail received through Sunday, so it should hold more. In Nov 2024, ballots received by the Sunday before were 56% of the final count."
+      "why": "In recent San Mateo County elections the first report held about 31 to 49% of the final count (in Nov 2022 and June 2026 it covered mail received by the Friday before; the 49% is from the March 2020 primary). This year it includes mail received through Sunday, so it should hold more. In Nov 2024, mail ballots received by 5 PM the Sunday before were 53.5% of the final count."
     },
     {
       "name": "Election-night updates",
@@ -113,12 +114,12 @@
     {
       "name": "Vote-center ballots vs early mail",
       "value": "6 points less YES (\u00b16)",
-      "why": "In-person voters have been less supportive of local measures than mail voters: about 5 points across San Mateo County measures in 2022 to 2026, and 7 to 15 points on Belmont's own 2022 and 2024 city measures."
+      "why": "In-person voters have been less supportive of local measures than mail voters: about 5 points across San Mateo County measures in 2022 to 2026, and 15.5 and 6.9 points on Belmont's own 2022 and 2024 city measures."
     },
     {
       "name": "Post-election ballots vs early mail",
       "value": "4 points more YES (\u00b14.5)",
-      "why": "Ballots counted after election night moved all 12 paired San Mateo County property-tax measures toward YES (by 0.8 to 7.3 points in the final result); on those measures late mail ran about 6 points more YES than early mail. Late mail comes from younger voters and fewer homeowners. Measure Y exempts senior homeowners who apply, which may narrow that gap, so this is set below the history."
+      "why": "Ballots counted after election night moved all 12 paired San Mateo County property-tax measures toward YES (by 0.8 to 7.3 points in the final result); on the 7 of them where the count could be split by ballot type, late mail ran about 6 points more YES than early mail. Late mail tends to come from younger voters, who are less likely to own homes. Measure Y exempts senior homeowners who apply, which may narrow that gap, so this is set below the history."
     },
     {
       "name": "How the two groups move together",

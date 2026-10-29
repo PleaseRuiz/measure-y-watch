@@ -48,6 +48,22 @@
     return { uniform: uniform, normal: normal };
   }
 
+  // Inverse of the standard normal CDF (Acklam's approximation, error below 1.2e-9).
+  function normInv(p) {
+    var a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+    var b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+    var c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+    var d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+    var q, r;
+    if (p < 0.02425 || p > 0.97575) {
+      q = Math.sqrt(-2 * Math.log(p < 0.5 ? p : 1 - p));
+      var x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+      return p < 0.5 ? x : -x;
+    }
+    q = p - 0.5; r = q * q;
+    return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+  }
+
   function clamp(x, lo, hi) { return x < lo ? lo : x > hi ? hi : x; }
   function toMs(iso) { var t = Date.parse(iso); return isNaN(t) ? null : t; }
 
@@ -55,18 +71,23 @@
 
   // Reports with votes, oldest first, one per distinct count. With remapTimes, report i is
   // treated as if it arrived at the i-th scheduled county release (used for demo and rehearsal data).
+  function count(v) {
+    if (typeof v === 'number') return v;
+    return typeof v === 'string' && /^\s*\d+\s*$/.test(v) ? Number(v) : NaN;
+  }
+
   function cleanHistory(data, priors, remapTimes) {
-    var rows = ((data && data.history) || []).map(function (h) {
-      return h ? { yes: Number(h.yes), no: Number(h.no), t: toMs(h.county_updated), when: h.county_updated } : null;
+    var rows = (data && Array.isArray(data.history) ? data.history : []).map(function (h) {
+      return h ? { yes: count(h.yes), no: count(h.no), t: toMs(h.county_updated), when: h.county_updated } : null;
     }).filter(function (h) {
       return h && Number.isInteger(h.yes) && Number.isInteger(h.no) && h.yes >= 0 && h.no >= 0 && h.yes + h.no > 0 && h.t !== null;
     }).map(function (h) { h.n = h.yes + h.no; return h; }).sort(function (a, b) { return a.t - b.t; });
     var out = [];
     rows.forEach(function (r) {
-      var prev = out[out.length - 1];
-      if (prev && prev.yes === r.yes && prev.no === r.no) return; // a re-stamp, not new votes
       // A correction replaces every earlier report it undercuts, so the counts only ever grow.
       while (out.length && (r.yes < out[out.length - 1].yes || r.no < out[out.length - 1].no)) out.pop();
+      var prev = out[out.length - 1];
+      if (prev && prev.yes === r.yes && prev.no === r.no) return; // a re-stamp, not new votes
       out.push(r);
     });
     if (remapTimes && priors && priors.demo_release_times) {
@@ -166,7 +187,7 @@
     var b = post.cov[1][0] / a;
     var c = Math.sqrt(Math.max(post.cov[1][1] - b * b, 1e-12));
     var z1 = rng.normal(), z2 = rng.normal(), k = 1;
-    if (tailDf && tailDf > 2) {
+    if (tailDf > 2) {
       var chi = 0;
       for (var i = 0; i < tailDf; i++) { var z = rng.normal(); chi += z * z; }
       k = Math.sqrt(tailDf / Math.max(chi, 1e-9));
@@ -174,9 +195,10 @@
     return [post.mean[0] + k * a * z1, post.mean[1] + k * (b * z1 + c * z2)];
   }
 
-  function tailWidth(priors) {
-    var df = priors.leans.tail_df;
-    return df && df > 2 ? Math.sqrt(df / (df - 2)) : 1;
+  // Degrees of freedom for the fat tails: a whole number above 2, or 0 for plain normal draws.
+  function tailDf(priors) {
+    var df = Math.round(Number(priors.leans.tail_df) || 0);
+    return df > 2 ? df : 0;
   }
 
   // ---------- weighted summaries ----------
@@ -195,6 +217,9 @@
   }
 
   var QS = [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95];
+  var BASE_MERGE_MS = 20 * 60000;
+  // The wobble: 96 redraws of the assumptions with 800 simulations each (checked against a 600-redraw reference).
+  var WOBBLE_SETS = 96, WOBBLE_SIMS = 800;
 
   // ---------- the forecast ----------
 
@@ -225,14 +250,16 @@
     // for the early mail; only a first report from after election night leaves the baseline mixed.
     var lateFirst = hist[0].phase === 1;
     if (lateFirst) hist[0].phase = 0;
-    var nowPhase = last.phase;
 
-    // Baseline: the YES share at the end of the first batch (normally the 8:10 PM early mail).
+    // Baseline: the YES share at the end of the first batch (normally the 8:10 PM early mail). A
+    // re-posted first report within 20 minutes joins it; anything later that night is in-person ballots.
     var baseIdx = 0;
-    while (baseIdx + 1 < hist.length && hist[0].phase === 0 && hist[baseIdx + 1].phase === 0) baseIdx++;
+    while (baseIdx + 1 < hist.length && hist[baseIdx + 1].phase === 0 && hist[baseIdx + 1].t - hist[0].t <= BASE_MERGE_MS) baseIdx++;
+    for (var b = baseIdx + 1; b < hist.length; b++) if (hist[b].phase === 0) hist[b].phase = 1;
     var base = hist[baseIdx];
     var baseShare = base.yes / base.n;
     var baseMixed = lateFirst || hist[0].phase !== 0;
+    var nowPhase = last.phase;
 
     var increments = [];
     for (var k = baseIdx + 1; k < hist.length; k++) {
@@ -248,30 +275,38 @@
     var tot = totalsPosterior(anchors, priors);
     var countedNight = nowPhase === 1 ? last.n - base.n : 0;
     var VC = priors.phases.vote_center_share;
+    // A first report from later in the night already holds some vote-center ballots.
+    var vcInBase = nowPhase <= 1 && lateFirst ? Math.max(0, scheduleAt(base.t, priors).mean - priors.schedule[0].counted_share) : 0;
+    // Past the last scheduled release (certification day) nothing is left to count.
+    var complete = scheduleAt(last.t, priors).mean >= 0.9995;
 
-    var sims = opts.sims || priors.sims || 40000;
-    var seed = hashString(JSON.stringify([hist.map(function (h) { return [h.yes, h.no, h.t]; }), priors.version]));
-    var rng = makeRng(seed);
-    var Nz = priors.noise;
+    var sims = opts.sims || priors.sims || 20000;
+    // The same random numbers for every forecast: everyone sees the same chance for the same
+    // count, and the needle only moves when the count does.
+    var rng = makeRng(hashString('peanut|' + priors.version));
+    var Nz = priors.noise, df = tailDf(priors);
     var futureSd = Math.sqrt(Nz.remaining_batch_sd * Nz.remaining_batch_sd + Math.pow(Nz.lean_drift_sd || 0, 2));
     var finals = new Array(sims), remaining = new Array(sims), totals = new Array(sims), pass = 0;
 
     for (var s = 0; s < sims; s++) {
-      var V = Math.exp(tot.meanLog + tot.sdLog * rng.normal());
+      // Every simulation draws the same set of random numbers, whatever the count.
+      var zV = rng.normal(), zVc = rng.normal(), lean = drawPair(rng, post, df);
+      var z1 = rng.normal(), z2 = rng.normal(), e1 = rng.normal(), e2 = rng.normal(), zM = rng.normal();
+
+      var V = complete ? last.n : Math.exp(tot.meanLog + tot.sdLog * zV);
       var R = Math.max(0, V - last.n);
       // Vote-center ballots still to come on election night (before the night ends); the rest come after.
-      var vc = clamp(VC.mean + VC.sd * rng.normal(), 0.01, 0.3);
-      var R1 = nowPhase <= 1 ? clamp(vc * V - countedNight, 0, R) : 0;
+      var vc = clamp(VC.mean + VC.sd * zVc, 0.01, 0.3);
+      var R1 = nowPhase <= 1 ? clamp((vc - vcInBase) * V - countedNight, 0, R) : 0;
       var R2 = R - R1;
 
-      var lean = drawPair(rng, post, priors.leans.tail_df);
       // Ballots not yet counted can drift from the ones counted so far, plus ordinary sampling noise.
-      var p1 = clamp(baseShare + lean[0] + futureSd * rng.normal(), 0.01, 0.99);
-      var p2 = clamp(baseShare + lean[1] + futureSd * rng.normal(), 0.01, 0.99);
-      if (R1 > 0) p1 = clamp(p1 + Math.sqrt(p1 * (1 - p1) / R1) * rng.normal(), 0.01, 0.99);
-      if (R2 > 0) p2 = clamp(p2 + Math.sqrt(p2 * (1 - p2) / R2) * rng.normal(), 0.01, 0.99);
+      var p1 = clamp(baseShare + lean[0] + futureSd * z1, 0.01, 0.99);
+      var p2 = clamp(baseShare + lean[1] + futureSd * z2, 0.01, 0.99);
+      if (R1 > 0) p1 = clamp(p1 + Math.sqrt(p1 * (1 - p1) / R1) * e1, 0.01, 0.99);
+      if (R2 > 0) p2 = clamp(p2 + Math.sqrt(p2 * (1 - p2) / R2) * e2, 0.01, 0.99);
       var total = last.n + R;
-      var shareFinal = (last.yes + R1 * p1 + R2 * p2) / total + Nz.model_sd * (R / total) * rng.normal();
+      var shareFinal = clamp((last.yes + R1 * p1 + R2 * p2) / total + Nz.model_sd * (R / total) * zM, 0, 1);
 
       finals[s] = shareFinal; remaining[s] = R; totals[s] = total;
       if (shareFinal > threshold) pass++;
@@ -281,7 +316,9 @@
     var shareQ = weightedQuantiles(finals, ones, QS);
     var remQ = weightedQuantiles(remaining, ones, [0.1, 0.5, 0.9]);
     var totQ = weightedQuantiles(totals, ones, [0.1, 0.5, 0.9]);
-    var margin = last.yes - last.no, remMid = remQ[0.5];
+    var remMid = remQ[0.5];
+    // The YES share of the remaining votes that would put YES exactly on the pass line.
+    var yesNeeds = remMid > 0 ? (threshold * (last.n + remMid) - last.yes) / remMid : null;
 
     return {
       status: 'live',
@@ -294,16 +331,15 @@
       totalVotes: totQ,
       countedFraction: last.n / totQ[0.5],
       baseShare: baseShare,
-      // Spread of each lean as drawn (Student-t draws are wider than their scale).
+      // Each lean's typical spread, on the same scale as the priors file (the fat tails come on top).
       leans: {
-        electionNight: { mean: post.mean[0], sd: Math.sqrt(post.cov[0][0]) * tailWidth(priors) },
-        postElection: { mean: post.mean[1], sd: Math.sqrt(post.cov[1][1]) * tailWidth(priors) }
+        electionNight: { mean: post.mean[0], sd: Math.sqrt(post.cov[0][0]) },
+        postElection: { mean: post.mean[1], sd: Math.sqrt(post.cov[1][1]) }
       },
       // The share of the remaining votes the trailing side would need to come back (median remaining).
-      trailingNeeds: remMid > 0 && margin !== 0 ? {
-        side: margin > 0 ? 'NO' : 'YES',
-        share: (remMid + Math.abs(margin)) / (2 * remMid)
-      } : null,
+      // YES trails at a tie: it needs 50% plus one vote.
+      trailingNeeds: yesNeeds === null ? null : last.yes / last.n <= threshold
+        ? { side: 'YES', share: yesNeeds } : { side: 'NO', share: 1 - yesNeeds },
       sims: sims,
       draws: opts.keepDraws ? finals : undefined
     };
@@ -321,37 +357,91 @@
   }
 
   // The wobble: the middle half of the chances Peanut gets when its assumptions (lean means,
-  // counting pace and turnout) are each redrawn from their own uncertainty, 24 times.
-  function wobble(data, priors, opts) {
+  // counting pace and turnout) are redrawn from their own uncertainty. The redraws are spread evenly
+  // over each assumption's range (a Latin hypercube with a fixed shuffle) and share the forecast's
+  // random numbers, so the band only changes when the count does.
+  function wobbleSets(priors, opts) {
     opts = opts || {};
-    var J = opts.sets || 24, K = opts.scale || 1, L = priors.leans, ps = [];
-    var rng = makeRng(hashString('wobble' + JSON.stringify((data && data.history) || [])));
+    var J = opts.sets || WOBBLE_SETS, K = opts.scale || 1, L = priors.leans, rng = makeRng(hashString('wobble|' + priors.version));
+    var strata = [0, 1, 2, 3].map(function () {
+      var perm = [], i;
+      for (i = 0; i < J; i++) perm.push(i);
+      for (i = J - 1; i > 0; i--) { var m = Math.floor(rng.uniform() * (i + 1)), t = perm[i]; perm[i] = perm[m]; perm[m] = t; }
+      return perm.map(function (k) { return normInv((k + 0.5) / J); });
+    });
+    var sets = [];
     for (var j = 0; j < J; j++) {
       var p2 = JSON.parse(JSON.stringify(priors));
-      var z1 = rng.normal(), z2 = L.correlation * z1 + Math.sqrt(1 - L.correlation * L.correlation) * rng.normal(), z3 = rng.normal(), z4 = rng.normal();
+      var z1 = strata[0][j], z2 = L.correlation * z1 + Math.sqrt(1 - L.correlation * L.correlation) * strata[1][j];
+      var z3 = strata[2][j], z4 = strata[3][j];
       p2.leans.election_night.mean += K * z1 * L.election_night.sd;
       p2.leans.post_election.mean += K * z2 * L.post_election.sd;
       p2.schedule.forEach(function (pt) { pt.counted_share = Math.min(1, pt.counted_share * Math.exp(K * z3 * pt.sd / pt.counted_share)); });
       p2.turnout.y_votes_median *= Math.exp(K * z4 * priors.turnout.y_votes_log_sd);
-      ps.push(forecast(data, p2, { sims: opts.sims || 2500, remapTimes: opts.remapTimes }).pYes);
+      sets.push(p2);
     }
-    ps.sort(function (a, b) { return a - b; });
+    return sets;
+  }
+
+  function wobbleBand(ps) {
+    ps = ps.slice().sort(function (a, b) { return a - b; });
     function q(p) { var i = p * (ps.length - 1), lo = Math.floor(i), hi = Math.ceil(i); return ps[lo] + (ps[hi] - ps[lo]) * (i - lo); }
     return { lo: q(0.25), hi: q(0.75) };
   }
 
-  // The forecast after each report, for the "how the needle moved" chart.
+
+
+  function wobble(data, priors, opts) {
+    opts = opts || {};
+    var ps = wobbleSets(priors, opts).map(function (p2) {
+      return forecast(data, p2, { sims: opts.sims || WOBBLE_SIMS, remapTimes: opts.remapTimes }).pYes;
+    });
+    return wobbleBand(ps);
+  }
+
+  // The forecast after each report, for the "how the needle moved" chart. With the default number
+  // of simulations each point is exactly what the needle showed after that report.
   function trajectory(data, priors, opts) {
     opts = opts || {};
     var hist = cleanHistory(data, priors, opts.remapTimes);
     return hist.map(function (h, i) {
-      var r = forecast(data, priors, { upTo: i, sims: opts.sims || 12000, remapTimes: opts.remapTimes });
+      var r = forecast(data, priors, { upTo: i < hist.length - 1 ? i : undefined, sims: opts.sims, remapTimes: opts.remapTimes });
       return { when: h.when, t: h.t, pYes: r.pYes, median: r.finalShare[0.5], low: r.finalShare[0.1], high: r.finalShare[0.9], counted: h.yes / h.n };
     });
   }
 
+  // The page's work for one set of results, in small steps and in the order the page wants it: the
+  // needle, then the wobble band, then the chart. Each step returns a message for the page, or null.
+  // cache keeps chart points between calls: a point never changes once its report is in.
+  function plan(data, priors, opts, cache) {
+    opts = opts || {}; cache = cache || {};
+    var remap = opts.remapTimes, r = null, steps = [], sets = null, ps = [], points = [];
+    steps.push(function () { r = forecast(data, priors, { remapTimes: remap }); return { type: 'needle', r: r }; });
+    for (var j = 0; j < WOBBLE_SETS; j += 8) steps.push(wobbleStep(j));
+    function wobbleStep(from) {
+      return function () {
+        if (r.status !== 'live') return null;
+        sets = sets || wobbleSets(priors);
+        sets.slice(from, from + 8).forEach(function (p2) { ps.push(forecast(data, p2, { sims: WOBBLE_SIMS, remapTimes: remap }).pYes); });
+        return ps.length === sets.length ? { type: 'band', band: wobbleBand(ps) } : null;
+      };
+    }
+    var hist = cleanHistory(data, priors, remap);
+    hist.forEach(function (h, i) {
+      steps.push(function () {
+        var last = i === hist.length - 1, key = priors.version + JSON.stringify(hist.slice(0, i + 1).map(function (x) { return [x.yes, x.no, x.t]; }));
+        var p = last ? r.pYes : key in cache ? cache[key] : (cache[key] = forecast(data, priors, { upTo: i, remapTimes: remap }).pYes);
+        points.push({ t: h.t, pYes: p });
+        return last ? { type: 'points', points: points, final: r.status === 'final' } : null;
+      });
+    });
+    if (!hist.length) steps.push(function () { return { type: 'points', points: [], final: false }; });
+    return steps;
+  }
+
   return {
-    forecast: forecast, trajectory: trajectory, wobble: wobble, cleanHistory: cleanHistory, phaseOf: phaseOf,
-    scheduleAt: scheduleAt, leanPosterior: leanPosterior, makeRng: makeRng, hashString: hashString
+    forecast: forecast, trajectory: trajectory, wobble: wobble, wobbleSets: wobbleSets, wobbleBand: wobbleBand,
+    plan: plan, cleanHistory: cleanHistory, phaseOf: phaseOf, scheduleAt: scheduleAt,
+    leanPosterior: leanPosterior, makeRng: makeRng, hashString: hashString, normInv: normInv
   };
 });

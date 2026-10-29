@@ -124,3 +124,69 @@ test('counts stored as text are read as numbers', function () {
   assert.strictEqual(a, b);
   assert.strictEqual(M.forecast(data([['3,400', '3000', FIRST]]), P).status, 'waiting', 'unparseable counts are ignored');
 });
+
+test('an overnight count stamped Wednesday morning is still election night', function () {
+  var night = M.forecast(data([[3300, 3100, FIRST], [3750, 3620, '2026-11-04T01:58:00-08:00']]), P).pYes;
+  var morning = M.forecast(data([[3300, 3100, FIRST], [3750, 3620, '2026-11-04T09:20:00-08:00']]), P).pYes;
+  assert.strictEqual(night, morning);
+});
+
+test('one more YES vote never lowers the chance', function () {
+  var last = -1;
+  for (var y = 3180; y <= 3220; y++) {
+    var p = M.forecast(data([[y, 3200, FIRST]]), P).pYes;
+    assert.ok(p >= last, y + ' YES gives ' + p + ' after ' + last);
+    last = p;
+  }
+});
+
+test('a later report on election night is not folded into the early-mail baseline', function () {
+  var a = M.forecast(data([[3300, 3100, FIRST], [3420, 3260, '2026-11-03T20:54:00-08:00']]), P).pYes;
+  var b = M.forecast(data([[3300, 3100, FIRST], [3420, 3260, '2026-11-03T20:56:00-08:00']]), P).pYes;
+  assert.strictEqual(a, b);
+});
+
+test('missing or blank counts are skipped, not read as zero', function () {
+  var h = M.cleanHistory(data([[3300, 3100, FIRST], [null, 3200, NIGHT], ['', 3200, THU], [true, 3200, MON]]), P);
+  assert.strictEqual(h.length, 1);
+});
+
+test('nothing is left to count on certification day', function () {
+  var r = M.forecast(data([[5701, 5700, '2026-12-03T17:05:00-08:00']]), P);
+  assert.strictEqual(r.remaining[0.9], 0);
+  assert.strictEqual(r.pYes, 1);
+});
+
+test('the trailing side follows the pass line, and YES trails at a tie', function () {
+  var tie = M.forecast(data([[3200, 3200, FIRST]]), P).trailingNeeds;
+  assert.deepStrictEqual([tie.side, tie.share], ['YES', 0.5]);
+  var higher = M.forecast(data([[3500, 3000, FIRST]], { threshold: 0.55 }), P);
+  assert.strictEqual(higher.trailingNeeds.side, 'YES', 'YES is below 55% even though it leads');
+});
+
+test('final-share ranges stay inside 0-100% for one-sided counts', function () {
+  [[3400, 0], [0, 3000]].forEach(function (c) {
+    var q = M.forecast(data([[c[0], c[1], FIRST]]), P).finalShare;
+    assert.ok(q[0.05] >= 0 && q[0.95] <= 1, JSON.stringify(q));
+  });
+});
+
+test('the wobble band changes only when the count does', function () {
+  var rows = [[3300, 3100, FIRST], [3750, 3620, NIGHT], [4400, 4250, THU]];
+  var a = M.wobble(data(rows), P);
+  var withRestamp = M.wobble(data(rows.concat([[4400, 4250, MON]])), P);
+  var d = data(rows); d.history[2].fetched_at = '2026-11-05T16:39:00-08:00';
+  assert.deepStrictEqual(withRestamp, a);
+  assert.deepStrictEqual(M.wobble(d, P), a);
+  assert.ok(a.lo <= a.hi);
+});
+
+test('each chart point is exactly what the needle showed after that report', function () {
+  var rows = [[3300, 3100, FIRST], [3750, 3620, NIGHT], [4400, 4250, THU]];
+  var t = M.trajectory(data(rows), P);
+  rows.forEach(function (_, i) {
+    assert.strictEqual(t[i].pYes, M.forecast(data(rows.slice(0, i + 1)), P).pYes);
+  });
+  var fin = M.trajectory(data(rows, { status: 'final' }), P);
+  assert.strictEqual(fin[fin.length - 1].pYes, 1);
+});
