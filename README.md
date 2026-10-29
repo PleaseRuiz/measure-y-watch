@@ -46,7 +46,8 @@ break, even on pages already open. Change it back to turn it on. The Live count 
 **Mid-count rules for the forecast tab** (from the 8:10 PM report until the county certifies):
 - Change `data/peanut-priors.json` only to fix a real error, and list every number change at the
   end of the forecast page's methodology ("Changes to the assumptions after the first report").
-  An edit that only changes wording keeps `"version"` as it is, so no number moves.
+  An edit that only changes wording keeps `"version"` as it is, so no number moves. A change to
+  any number must also change `"version"`.
 - Pause only for broken data or a model bug (for example a county correction), never because of an
   unwelcome number.
 - After pushing a change to that file, check that the run it started turned green. If it says

@@ -6,7 +6,7 @@
 <title>PEANUT · Measure Y Watch</title>
 <meta name="description" content="A just-for-fun forecast of Belmont's Measure Y, with the full methodology. Not official results.">
 <meta property="og:title" content="PEANUT · Measure Y Watch">
-<meta property="og:description" content="PEANUT (Peninsula Election Analysis &amp; Needle, Unofficial Tally): a just-for-fun forecast of Belmont's Measure Y. Not official results, not affiliated with The New York Times.">
+<meta property="og:description" content="PEANUT (Peninsula Election Analysis &amp; Needle, Unofficial Tally): a just-for-fun forecast of Belmont's Measure Y. Not official results.">
 <meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1114" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -77,10 +77,12 @@ a{color:var(--accent)}
 /* Stick only when the whole card fits on screen. */
 @media (min-width:900px) and (min-height:880px){.needle-card{position:sticky;top:16px}}
 .needle-title{margin:0;font-size:13px;letter-spacing:.14em;font-weight:700;color:var(--muted);text-transform:uppercase}
-.needle-sub{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.needle-sub{margin:6px 0 0;max-width:30em;font-size:15px;line-height:1.35;color:var(--ink-2);text-wrap:balance}
 .needle-sub b{color:var(--ink);font-weight:800}
 .needle-sub.sample{color:var(--sample);font-weight:700}
-.needle-title.brand{font-size:15px;letter-spacing:.32em;color:var(--ink)}
+/* The left padding matches the letter spacing after the last letter, so the name sits centered. */
+.needle-title.brand{font-size:26px;letter-spacing:.28em;padding-left:.28em;color:var(--ink)}
+@media (min-width:900px){.needle-title.brand{font-size:30px}.needle-sub{font-size:16px}}
 .gauge{width:100%;max-width:540px;height:auto;display:block;overflow:visible;margin-top:4px}
 .seg{fill:none;stroke-width:40}
 .g-n3{stroke:var(--n3)}.g-n2{stroke:var(--n2)}.g-n1{stroke:var(--n1)}.g-tu{stroke:var(--tu)}.g-y1{stroke:var(--y1)}.g-y2{stroke:var(--y2)}.g-y3{stroke:var(--y3)}
@@ -162,7 +164,6 @@ a{color:var(--accent)}
 .method h3{margin:22px 0 6px;font-size:16px;font-weight:700}
 .method p,.method li{font-size:15px;color:var(--ink-2);max-width:72ch}
 .method ul{padding-left:20px}
-.method code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px}
 .method table{border-collapse:collapse;font-size:14px;width:100%;max-width:820px;margin:8px 0}
 .method th,.method td{border-top:1px solid var(--line);padding:8px 10px 8px 0;text-align:left;vertical-align:top;color:var(--ink-2)}
 .method th{color:var(--muted);font-weight:600;font-size:12px;letter-spacing:.06em}
@@ -179,9 +180,6 @@ a{color:var(--accent)}
 @media (max-width:899px){.method td:first-child,.method td.v{width:auto}}
 
 button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-
-.foot{margin-top:28px;display:grid;gap:12px;font-size:13px;color:var(--muted)}
-.foot p{margin:0;max-width:80ch}
 
 @media (prefers-reduced-motion: reduce){
   .pointer,.peanut-tilt,.pn-eyes,.pn-ear{transition:none}
@@ -303,11 +301,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 
     <section class="card method" id="method" aria-labelledby="methodHeading">
       <h2 id="methodHeading">How PEANUT works</h2>
-      <p>PEANUT (Peninsula Election Analysis &amp; Needle, Unofficial Tally) is a just-for-fun forecast for people who like election-night needles. The <a href="./">Live count</a> tab shows only the county's actual numbers; this tab estimates where those numbers will end up. It's an homage to The New York Times' election needle and isn't affiliated with or endorsed by the Times. It's named for Peanut, a small doodle and its mascot. Peanut's mood shows how sure the forecast is, not who's ahead, and Peanut does not do the math: the model described below does.</p>
+      <p>PEANUT (Peninsula Election Analysis &amp; Needle, Unofficial Tally) is a just-for-fun forecast for people who like election-night needles. The <a href="./">Live count</a> tab shows only the county's actual numbers; this tab estimates where those numbers will end up. Peanut's mood shows how sure the forecast is, not who's ahead, and Peanut does not do the math: the model described below does.</p>
       <p><b>In short:</b> Peanut takes the county's YES and NO totals, assumes the uncounted ballots will lean the way similar ballots have in past county elections, updates that as the count comes in, plays out the rest of the count 20,000 times and shows how often YES ends above 50%.</p>
 
       <h3>What goes in</h3>
-      <p>Only what San Mateo County publishes for Measure Y at each update: the YES and NO totals and the county's "Website Updated" time. Nothing about individual voters is used or stored.</p>
+      <p>Only what San Mateo County publishes for Measure Y at each update: the YES and NO totals and the county's "Website Updated" time.</p>
 
       <h3>The idea: three groups of ballots</h3>
       <ul>
@@ -315,23 +313,23 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
         <li><b>Election night (9 PM, then hourly): in-person ballots.</b> These updates add only ballots cast at vote centers. In past county elections those voters were less supportive of local measures than mail voters, so Peanut expects YES to slip during the night.</li>
         <li><b>Nov 5 to Nov 16: late ballots.</b> Mail dropped off on Election Day or arriving by Nov 10, plus provisional ballots and signature fixes. Late mail tends to come from younger voters, and on property taxes late ballots have run more YES than early mail, so Peanut expects YES to recover after election night.</li>
       </ul>
-      <p>Each group gets a "lean": how many points more or less YES it is than the early mail. Peanut starts each lean from county history and updates it from every new county update (a standard Bayesian update; small updates count for less, and the lean is allowed to drift a little from one update to the next). The two leans are linked: if in-person ballots come in well below what Peanut expects, it also lowers what it expects from late ballots (and raises it if they come in better), because in county history the measures with the worst in-person gaps had the weakest late mail.</p>
+      <p>Each group gets a "lean": how many points more or less YES it is than the early mail. Peanut starts each lean from county history and updates it from every new county update (a standard Bayesian update; small updates count for less, and the lean is allowed to drift a little from one update to the next). The two leans are linked: if in-person ballots come in well below what Peanut expects, it also lowers what it expects from late ballots (and raises it if they come in better), because in county history the measures with the worst in-person gaps had the weakest late ballots.</p>
 
       <h3>What county history says</h3>
       <ul>
-        <li><b>In-person ballots run less YES.</b> Across 70 San Mateo County measures since 2020 with at least 200 in-person votes, vote-center ballots ran about 4.5 points less YES than all mail ballots; on Belmont's own city measures the gap was 15.5 points in 2022 and 6.9 in 2024. Measured against the early mail alone, as Peanut does, the gap ran from about 1 to 5 points on the county's 2022 school bonds to about 16 to 17 on its 2022 hotel taxes, including Belmont's Measure K. (Computed from the county's certified results and election-night news counts.)</li>
-        <li><b>Late ballots have moved property taxes toward YES.</b> In 12 county property-tax measures (parcel taxes, school bonds and one city bond) where an election-night count could be paired with the final count, YES gained every time, by 0.8 to 7.3 points. In the March 2020 primary, YES finished 2 to 10 points higher than the county's own 8:56 PM election-night snapshot on all seven school measures. On the county's Nov 2022 school bonds, late ballots ran about 3 to 6 points more YES than the early mail. Belmont's own city taxes that weren't property taxes barely moved after election night. (Pairs compiled from local news reports and the county's results.)</li>
-        <li><b>Measure Y is unusual.</b> It's a citizen-initiated special tax on building square footage that passes with a simple majority, with an exemption for senior homeowners who apply. Peanut can't tell yet whether it will behave like the county's school taxes, where late ballots ran more YES, or like Belmont's own non-property city taxes, where they barely moved, so it assumes a late shift between the two.</li>
+        <li><b>In-person ballots run less YES.</b> Across 70 San Mateo County measures since 2020 with at least 200 in-person votes, in-person ballots ran about 4.5 points less YES than all mail ballots; on Belmont's own city measures the gap was 15.5 points in 2022 and 6.9 in 2024. Measured against the early mail alone, as Peanut does, the gap ran from about 1 to 5 points on the county's 2022 school bonds to about 16 to 17 on its 2022 hotel taxes, including Belmont's Measure K. (Computed from the county's certified results and election-night news counts.)</li>
+        <li><b>Late ballots have moved property taxes toward YES.</b> In 12 county property-tax measures (parcel taxes, school bonds and one city bond) where an election-night count could be paired with the final count, YES gained every time, by 0.8 to 7.3 points. In the March 2020 primary, YES finished 2 to 10 points higher than the county's own 8:56 PM election-night snapshot on all seven school measures. On the county's Nov 2022 school bonds, late ballots ran about 3 to 6 points more YES than the early mail. Belmont's own city taxes that weren't property taxes barely moved after election night: against the early mail, late ballots on Belmont's 2022 hotel tax ran 0 to 2 points less YES. (Pairs compiled from local news reports and the county's results.)</li>
+        <li><b>Measure Y is unusual.</b> It's a citizen-initiated special tax on building square footage that passes with a simple majority, with an exemption for senior homeowners who apply. Peanut can't tell yet whether it will behave like the county's school taxes, where late ballots ran more YES, or like Belmont's own non-property city taxes, whose late ballots ran about even with the early mail or a little below, so it assumes a late shift between the two, closer to the school taxes.</li>
       </ul>
 
       <h3>How many votes are left</h3>
       <p>Belmont has about 17,400 registered voters. Peanut combines a turnout estimate (about 11,300 votes on Measure Y, give or take 11%) with how much of the final count the county usually has done by each release. The 8:10 PM report and each post-election update pin this down a little more (the in-person updates on election night don't change it); by the last scheduled update only a few percent should remain.</p>
 
       <h3>Then it simulates</h3>
-      <p>Peanut plays out 20,000 versions of the rest of the count from those uncertainties, with fat tails so big surprises stay possible, and counts how often YES ends above 50%. That's the chance on the needle. Every forecast uses the same random numbers, so everyone sees the same chance for the same count, and the needle moves only when the count or an assumption changes. An assumption change redraws every past point on the chart.</p>
+      <p>Peanut plays out 20,000 versions of the rest of the count from those uncertainties, with fat tails so big surprises stay possible, and counts how often YES ends above 50%. That's the chance on the needle. Every forecast uses the same random numbers, so everyone sees the same chance for the same count, and the number on the needle changes only when the count or an assumption changes. An assumption change redraws every past point on the chart.</p>
 
       <h3>What the zones mean</h3>
-      <p>Tossup: a 40 to 60% chance. Leans YES: 60 to 75% (Leans NO: 25 to 40%). Likely YES: 75 to 95% (Likely NO: 5 to 25%). Very likely YES: above 95% (Very likely NO: below 5%). Even "Likely" is far from certain: at 75%, Measure Y would still fail about 1 time in 4.</p>
+      <p>Tossup: a 40 to 60% chance. Leans YES: 60 to 75% (Leans NO: 25 to 40%). Likely YES: 75 to 95% (Likely NO: 5 to 25%). Very likely YES: above 95% (Very likely NO: below 5%). Even "Likely" is far from certain: at 80%, Measure Y would still fail about 1 time in 5.</p>
 
       <h3 id="wobble">The wobble</h3>
       <p>On the Live count tab the wobble is just for fun. Here it means something. Peanut reruns the forecast 96 times with its assumptions (how the uncounted ballots lean, how fast the county counts, how many people vote) spread across their own uncertainty, and the needle wanders across the middle half of the chances that come out. The number on the needle already averages over all of these; the wobble shows how much it would move if Peanut's starting assumptions were off. A wide wobble means the chance itself depends a lot on assumptions; when the outcome no longer depends on them, the needle sits still. The button under the needle turns it off.</p>
@@ -344,10 +342,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 
       <h3>What moves the needle</h3>
       <ul>
-        <li>Until the Thu, Nov 5 update, the chance mostly reflects how much more YES the late ballots will be. In a close race, each point of that assumption is worth about 5 points of chance.</li>
+        <li>Until the Thu, Nov 5 update, the chance mostly reflects how much more YES the late ballots will be. In a close race, each point of that assumption is worth about 5 points of chance at 8:10 PM and up to about 8 by the end of election night.</li>
         <li>On election night the in-person ballots matter too, through their link to late ballots.</li>
         <li>By Mon, Nov 9 it mostly reflects how much late batches can differ from each other and, if YES trails, how many ballots are left.</li>
-        <li>Until then, turnout and counting-pace changes move it by less than 1 point.</li>
+        <li>Turnout and counting pace matter little while YES leads (about a point or less through the Thu, Nov 5 update). When YES needs the late ballots to catch up, they decide how many ballots are left, so in a close race they can move the chance by 2 to 9 points, even on election night.</li>
       </ul>
 
       <h3>Does it work?</h3>
@@ -355,21 +353,16 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 
       <h3>What could go wrong</h3>
       <ul>
-        <li>Election night may look rough for YES. In-person voters in the 2022 midterm were much less supportive of local measures, and a big in-person slide also lowers what Peanut expects from late ballots, so the needle can drop sharply overnight and recover from Thu, Nov 5 if late ballots still lean YES.</li>
+        <li>The needle may fall sharply on election night. In-person voters in the 2022 midterm were much less supportive of local measures, and a big in-person slide also lowers what Peanut expects from late ballots, so the needle can drop overnight and recover from Thu, Nov 5 if late ballots still run more YES than the early mail.</li>
         <li>The late ballots might not lean YES this time. If they break even, Peanut will be too optimistic about YES until the first post-election update on Nov 5 shows it.</li>
         <li>The county could count in a different order than usual, or post a correction.</li>
         <li>If the 8:10 PM report is missed or stamped late, the baseline includes some in-person ballots and is a bit muddier.</li>
       </ul>
 
-      <h3>Want to argue with Peanut?</h3>
-      <p>Every assumption lives in one file, <code>data/peanut-priors.json</code>, in the <a href="https://github.com/PleaseRuiz/measure-y-watch">project's GitHub repository</a>. Suggest a change there with your reasoning (aggregate numbers and public sources only). The model is in <code>js/peanut-model.js</code> and the tests are in <code>tests/</code>.</p>
-      <p>From the first report until the county certifies, the assumptions change only to fix a real error, and every change is listed here. Changes to the assumptions after the first report on Nov 3: none so far.</p>
+      <h3>Changes during the count</h3>
+      <p>From the first report until the county certifies, the assumptions change only to fix a real error, and every change to a number is listed here. Changes to the assumptions after the first report on Nov 3: none so far.</p>
     </section>
   </main>
-
-  <footer class="foot">
-    <p>Just for fun. This forecast is not the official count and not a prediction anyone should bet on. Official numbers come from <a href="https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html">San Mateo County</a> and can change until it certifies on Dec&nbsp;3. Not affiliated with The New York Times or the county.</p>
-  </footer>
 </div>
 
 <script src="js/peanut-model.js"></script>
@@ -531,24 +524,29 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   // What came in so far versus what Peanut assumed going in, so a move of the needle has a reason.
   function whyText(r) {
     var L = state.priors.leans, ob = r.observed || { night: { n: 0 }, post: { n: 0 } };
-    function startText(x) { var v = Math.round(Math.abs(100 * x) * 10) / 10; return v < 0.5 ? 'even with it' : v + (x > 0 ? ' more' : ' less'); }
+    function startText(x) { var v = Math.round(Math.abs(100 * x) * 10) / 10; return v < 0.5 ? 'about even' : v + (x > 0 ? ' more' : ' less'); }
     function dirText(x) { return x > 0 ? 'more' : 'less'; }
     if (r.phase === 0) {
       if (r.baseMixed) return ' So far Peanut has one county report.';
       return ' So far there is only early mail. Peanut expects tonight\'s in-person ballots to run ' + dirText(L.election_night.mean) +
         ' YES and the late ballots counted from Thu, Nov 5 to run ' + dirText(L.post_election.mean) + ' YES.';
     }
-    var night = r.phase === 1, g = night ? ob.night : ob.post, start = night ? L.election_night.mean : L.post_election.mean, out = '';
+    var night = r.phase === 1, g = night ? ob.night : ob.post, out = '';
+    var baseName = r.baseMixed ? 'the first update' : 'the early mail';
+    // Late ballots are measured against what Peanut expected once election night was in.
+    var start = night ? L.election_night.mean : (typeof r.lateExpected === 'number' ? r.lateExpected : L.post_election.mean);
+    var moved = !night && Math.abs(start - L.post_election.mean) >= 0.015;
     if (g.n >= 50) {
       var d = g.yes / g.n - r.baseShare, v = Math.abs(100 * d);
-      out += ' ' + (night ? 'In-person' : 'Late') + ' ballots so far are ' + (v < 0.5 ? 'about even with the early mail' : 'about ' + v.toFixed(1) + ' points ' + dirText(d) + ' YES than the early mail') +
-        (Math.abs(d - start) <= 0.015 ? ', about what Peanut expected.' : ' (Peanut started at ' + startText(start) + ').');
+      out += ' ' + (night ? 'In-person' : 'Late') + ' ballots so far are ' + (v < 0.5 ? 'about even with ' + baseName : 'about ' + v.toFixed(1) + ' points ' + dirText(d) + ' YES than ' + baseName) +
+        (Math.abs(d - start) <= 0.015 ? ', about what Peanut expected' + (moved ? ' after election night.' : '.')
+          : moved ? ' (after election night Peanut expected ' + startText(start) + ').' : ' (Peanut started at ' + startText(start) + ').');
     }
     if (night) {
       var shift = r.leans.postElection.mean - L.post_election.mean;
       var lead = out ? ' That\'s' : ' In-person ballots are running';
-      if (shift <= -0.015) out += lead + ' less YES than Peanut expected, so it now expects less help from late ballots too.';
-      else if (shift >= 0.015) out += lead + ' more YES than Peanut expected, so it now expects more help from late ballots too.';
+      if (shift <= -0.015) out += lead + ' less YES than Peanut expected, so it now expects late ballots to run less YES too.';
+      else if (shift >= 0.015) out += lead + ' more YES than Peanut expected, so it now expects late ballots to run more YES too.';
     }
     return out;
   }
@@ -558,8 +556,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     if (r.status === 'final') return p >= 0.5 ? "It's certified: Measure Y passed. Peanut is off duty." : "It's certified: Measure Y failed. Peanut is off duty.";
     var outcome = p >= 0.5 ? 'pass' : 'fail';
     var lead = r.counted.yes - r.counted.no, why = whyText(r);
-    if (lead < 0 && p >= 0.5) why += ' YES trails by ' + fmt(-lead) + ' votes, but Peanut expects the ballots still to come to lean YES.';
-    if (lead > 0 && p < 0.5) why += ' YES leads by ' + fmt(lead) + ' votes, but Peanut expects the ballots still to come to lean NO.';
+    function votes(n) { return fmt(n) + (n === 1 ? ' vote' : ' votes'); }
+    if (lead < 0 && p >= 0.5) why += ' YES trails by ' + votes(-lead) + ', but Peanut expects the ballots still to come to lean YES.';
+    if (lead > 0 && p < 0.5) why += ' YES leads by ' + votes(lead) + ', but Peanut expects the ballots still to come to lean NO.';
     if (rem < 5) return 'The count looks complete, with ' + (lead > 0 ? 'YES' : lead < 0 ? 'NO' : 'neither side') + ' ahead. Peanut is waiting for the county to certify it.';
     if (rem < 0.01 * r.totalVotes[0.5] + 25) {
       if (p > 0.99 || p < 0.01) return 'Only about ' + approx(rem) + ' votes on Y are left to count. Peanut thinks this one is settled.';
@@ -695,8 +694,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     var L = priors.leans, items = [];
     if (r && r.status !== 'final') {
       items.push('<li><b>Baseline:</b> the ' + (r.baseMixed ? 'first update we have' : '8:10 PM early mail') + ' was ' + pct(r.baseShare) + ' YES.</li>');
-      items.push('<li><b>In-person ballots:</b> ' + pointsText(r.leans.electionNight.mean) + ' (give or take ' + (100 * r.leans.electionNight.sd).toFixed(1) + ').</li>');
-      items.push('<li><b>Late ballots:</b> ' + pointsText(r.leans.postElection.mean) + ' (give or take ' + (100 * r.leans.postElection.sd).toFixed(1) + ').</li>');
+      if (r.phase <= 1) items.push('<li><b>In-person ballots still to count:</b> ' + pointsText(r.leans.electionNight.mean) + ' (give or take ' + (100 * r.leans.electionNight.sd).toFixed(1) + ').</li>');
+      items.push('<li><b>Late ballots still to count:</b> ' + pointsText(r.leans.postElection.mean) + ' (give or take ' + (100 * r.leans.postElection.sd).toFixed(1) + ').</li>');
       items.push('<li><b>Total votes on Y:</b> about ' + approx(r.totalVotes[0.5]) + ' (likely ' + approx(r.totalVotes[0.1]) + '–' + approx(r.totalVotes[0.9]) + '), so about ' + Math.round(100 * r.countedFraction) + '% is counted.</li>');
     } else if (r) {
       items.push('<li>The count is certified, so there is nothing left to assume.</li>');

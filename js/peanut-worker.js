@@ -5,10 +5,12 @@
  */
 importScripts('peanut-model.js');
 
-var cache = {}, job = null, busy = false;
+var cache = {}, cachedPriors = null, job = null, busy = false;
 
 self.onmessage = function (e) {
-  var m = e.data;
+  var m = e.data, pj = JSON.stringify(m.priors);
+  // Chart points are kept per priors version; a fix that keeps the version must still redraw them.
+  if (pj !== cachedPriors) { cache = {}; cachedPriors = pj; }
   job = { key: m.key, steps: self.PeanutModel.plan(m.data, m.priors, { remapTimes: m.remapTimes }, cache) };
   if (!busy) { busy = true; setTimeout(step, 0); }
 };

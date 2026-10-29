@@ -118,18 +118,18 @@
     },
     {
       "name": "Late ballots vs early mail",
-      "value": "4 points more YES (±4.5; 80% range: 3 less to 11 more, so they lean NO about 1 time in 4)",
-      "why": "All 12 paired county property-tax measures gained YES after election night (by 0.8 to 7.3 points in the final result). On the county's Nov 2022 school bonds, late ballots ran about 3 to 6 points more YES than the early mail (4.6 on average), and more in primaries. Belmont's own city taxes that weren't property taxes barely moved after election night. Peanut sits at +4 because it's unclear which kind of measure Y behaves like."
+      "value": "4 points more YES (±4.5; 80% range: 3 less to 11 more, so about 1 time in 4 they run less YES than the early mail)",
+      "why": "All 12 paired county property-tax measures gained YES after election night (by 0.8 to 7.3 points in the final result). On the county's Nov 2022 school bonds, late ballots ran about 3 to 6 points more YES than the early mail (4.6 on average), and more in primaries. Belmont's own city taxes that weren't property taxes barely moved after election night: against the early mail, late ballots on Belmont's 2022 hotel tax ran 0 to 2 points less YES. Peanut sits at +4 because it's unclear which kind of measure Y behaves like."
     },
     {
       "name": "How the two groups move together",
       "value": "correlation 0.6",
-      "why": "When in-person ballots differ from the early mail on a measure, late ballots have tended to differ in the same direction; on the county's Nov 2022 measures the two moved together closely. So a big in-person slide also lowers what Peanut expects from late ballots."
+      "why": "Measures whose in-person ballots fell furthest below the early mail also had the weakest late ballots. On the county's Nov 2022 measures, the hotel taxes ran about 16 points less YES in person and 2 to 3 less in late ballots, while the school bonds ran 1 to 5 less in person but 3 to 6 more in late ballots. So an in-person slide bigger than Peanut expects also lowers what it expects from late ballots."
     },
     {
       "name": "Late batches vary",
       "value": "about 2 points from one batch to the next",
-      "why": "Late batches mix Election Day drop-offs, mail arriving by Nov 10, provisional ballots and signature fixes, which can differ. By Mon, Nov 9 this matters more than anything else. Nothing local measures it, so it's a judgment."
+      "why": "Late batches mix Election Day drop-offs, mail arriving by Nov 10, provisional ballots and signature fixes, which can differ. By Mon, Nov 9 this matters more than anything else while YES leads; if YES trails, how many ballots are left matters more. Nothing local measures it, so it's a judgment."
     },
     {
       "name": "Surprises",

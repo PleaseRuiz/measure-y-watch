@@ -272,6 +272,8 @@
       }
     }
     var post = leanPosterior(baseShare, increments, priors);
+    // What Peanut expected from late ballots once election night was in (before any late ballots).
+    var lateExpected = leanPosterior(baseShare, increments.filter(function (x) { return x.phase !== 2; }), priors).mean[1];
 
     // Election-night reports add vote-center ballots only, so the total is learned from the
     // first report and from post-election reports.
@@ -338,6 +340,7 @@
       baseShare: baseShare,
       // Votes counted so far in each later group (in-person on election night, late ballots after).
       observed: observed,
+      lateExpected: lateExpected,
       // Each lean's typical spread, on the same scale as the priors file (the fat tails come on top).
       leans: {
         electionNight: { mean: post.mean[0], sd: Math.sqrt(post.cov[0][0]) },
