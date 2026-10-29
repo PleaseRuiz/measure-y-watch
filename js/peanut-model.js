@@ -85,8 +85,13 @@
     }).map(function (h) { h.n = h.yes + h.no; return h; }).sort(function (a, b) { return a.t - b.t; });
     var out = [];
     rows.forEach(function (r) {
-      // A correction replaces every earlier report it undercuts, so the counts only ever grow.
-      while (out.length && (r.yes < out[out.length - 1].yes || r.no < out[out.length - 1].no)) out.pop();
+      // A correction lowers every earlier report it undercuts to its own counts, keeping their times, so the
+      // counts only ever grow and the corrected votes stay in the group (in-person or late) they were counted in.
+      for (var i = out.length - 1; i >= 0 && (r.yes < out[i].yes || r.no < out[i].no); i--) {
+        out[i].yes = Math.min(out[i].yes, r.yes); out[i].no = Math.min(out[i].no, r.no); out[i].n = out[i].yes + out[i].no;
+      }
+      // Drop reports the correction emptied or made identical to the one before them.
+      out = out.filter(function (h, j) { return h.n > 0 && !(j > 0 && h.yes === out[j - 1].yes && h.no === out[j - 1].no); });
       var prev = out[out.length - 1];
       if (prev && prev.yes === r.yes && prev.no === r.no) return; // a re-stamp, not new votes
       out.push(r);

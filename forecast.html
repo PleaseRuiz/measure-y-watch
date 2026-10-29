@@ -542,12 +542,12 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
       out += ' ' + (night ? 'In-person' : 'Late') + ' ballots so far are ' + (v < 0.5 ? 'about even with ' + baseName : 'about ' + v.toFixed(1) + ' points ' + dirText(d) + ' YES than ' + baseName) +
         (Math.abs(d - start) <= 0.015 ? ', about what Peanut expected' + (moved ? ' after election night.' : '.')
           : moved ? ' (after election night Peanut expected ' + startText(start) + ').' : ' (Peanut started at ' + startText(start) + ').');
-    }
-    if (night) {
-      var shift = r.leans.postElection.mean - L.post_election.mean;
-      var lead = out ? ' That\'s' : ' In-person ballots are running';
-      if (shift <= -0.015) out += lead + ' less YES than Peanut expected, so it now expects late ballots to run less YES too.';
-      else if (shift >= 0.015) out += lead + ' more YES than Peanut expected, so it now expects late ballots to run more YES too.';
+      // Explain a change in what Peanut expects from late ballots only when it agrees with that sentence.
+      if (night) {
+        var shift = r.leans.postElection.mean - L.post_election.mean;
+        if (shift <= -0.015 && d < start - 0.015) out += ' That\'s less YES than Peanut expected, so it now expects late ballots to run less YES too.';
+        else if (shift >= 0.015 && d > start + 0.015) out += ' That\'s more YES than Peanut expected, so it now expects late ballots to run more YES too.';
+      }
     }
     return out;
   }
@@ -811,6 +811,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     el.take.innerHTML = 'The forecast is paused while we check a problem with the data or the model, not because of what it shows. The <a href="' + LIVE_HREF + '">Live count</a> tab has the actual numbers.';
     el.estBody.innerHTML = '<p class="note" style="margin-top:10px">Back when the forecast is.</p>';
     el.movedBody.innerHTML = '<p class="note" style="margin-top:10px">Back when the forecast is.</p>';
+    el.assume.innerHTML = '<li>Back when the forecast is.</li>';
   }
 
   function load() {

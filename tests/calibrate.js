@@ -52,7 +52,7 @@ function simulateElection(rng, W) {
   // Election night adds in-person ballots only: their share of all votes comes from the model's own
   // prior and is spread over the six night releases, instead of falling out of two noisy schedule draws.
   var VC = P.phases.vote_center_share, vcs = Math.min(0.3, Math.max(0.01, VC.mean + VC.sd * W.leanScale * rng.normal()));
-  for (var i0 = 1; i0 <= 6; i0++) cum[i0] = cum[0] + vcs * i0 / 6;
+  for (var i0 = 1; i0 <= 6; i0++) cum[i0] = Math.min(0.995, cum[0] + vcs * i0 / 6);
   for (var i1 = 7; i1 < cum.length; i1++) cum[i1] = Math.min(0.995, Math.max(cum[i1 - 1] + 0.003, cum[i1]));
   var hist = [], yes = 0, no = 0, counted = 0;
   cum.forEach(function (c, i) {

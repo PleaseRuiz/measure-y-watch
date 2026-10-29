@@ -213,3 +213,25 @@ test('the wobble band sits around the needle', function () {
     assert.ok(w.lo <= p + 0.005 && p - 0.005 <= w.hi, 'needle ' + p + ' outside ' + JSON.stringify(w));
   });
 });
+
+test('the wobble band moves by the needle minus the short-run chance', function () {
+  var d = data([[3300, 3100, FIRST]]);
+  var shift = M.forecast(d, P).pYes - M.forecast(d, P, { sims: 800 }).pYes;
+  // With sims passed, wobble() uses the same 800-sim redraws without the shift.
+  var raw = M.wobble(d, P, { sims: 800 }), w = M.wobble(d, P);
+  assert.ok(Math.abs(shift) > 0.002, 'pick a count with a visible short-run error, got ' + shift);
+  assert.ok(Math.abs(w.lo - (raw.lo + shift)) < 1e-12 && Math.abs(w.hi - (raw.hi + shift)) < 1e-12);
+});
+
+test('a county correction keeps the night\'s votes in the night', function () {
+  var night = [[2821, 2603, FIRST], [3168, 3206, NIGHT]];
+  var plain = M.forecast(data(night), P);
+  var fixed = M.forecast(data(night.concat([[3160, 3200, '2026-11-04T16:30:00-08:00']])), P);
+  assert.strictEqual(fixed.observed.post.n, 0, 'no late ballots have been counted');
+  assert.strictEqual(fixed.observed.night.n, 3160 + 3200 - 2821 - 2603);
+  assert.ok(Math.abs(fixed.pYes - plain.pYes) < 0.03, plain.pYes + ' vs ' + fixed.pYes);
+  // A correction that also adds votes keeps the earlier report's time for what it already counted.
+  var mixed = M.forecast(data(night.concat([[3160, 3200, '2026-11-04T16:30:00-08:00'], [3700, 3600, THU]])), P);
+  assert.strictEqual(mixed.observed.night.n, 3160 + 3200 - 2821 - 2603);
+  assert.strictEqual(mixed.observed.post.n, 3700 + 3600 - 3160 - 3200);
+});
