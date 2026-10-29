@@ -12,3 +12,5 @@ trace*.zip
 *.har
 screenshots/
 network*.json
+.last-fetch
+_site/

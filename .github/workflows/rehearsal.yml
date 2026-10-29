@@ -1,0 +1,76 @@
+# Rehearsal only. Delete after the rehearsal, with scraper/rehearsal.py and data/rehearsal.json.
+name: Rehearsal
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+env:
+  PAGE_URL: https://pleaseruiz.github.io/measure-y-watch
+
+jobs:
+  step:
+    name: Rehearsal update ${{ matrix.n }}
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        n: [0, 1, 2, 3, 4, 5]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - name: Wait a few minutes between updates
+        if: matrix.n > 0
+        run: sleep 120
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Write fake update to rehearsal.json
+        run: python scraper/rehearsal.py write ${{ matrix.n }}
+
+      - name: Commit rehearsal.json
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/rehearsal.json
+          git diff --cached --quiet || git commit -q -m "Rehearsal update ${{ matrix.n }} (made-up numbers)"
+          git push -q || { git pull -q --rebase origin main && git push -q; }
+          echo "pushed_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Build site
+        run: |
+          mkdir _site
+          cp index.html _site/
+          cp -r data _site/
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+          name: rehearsal-${{ matrix.n }}
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: rehearsal-${{ matrix.n }}
+
+      - name: Time until the live page shows it
+        env:
+          PUSHED_AT: ${{ steps.commit.outputs.pushed_at }}
+        run: python scraper/rehearsal.py verify

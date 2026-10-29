@@ -42,7 +42,7 @@ def _squash(text):
     return re.sub(r"\s+", " ", text).strip()
 
 
-def _whole_number(text, what):
+def whole_number(text, what):
     cleaned = _squash(text).replace(",", "")
     if not re.fullmatch(r"\d+", cleaned):
         raise ParseError(f"{what} is not a whole number: {text!r}")
@@ -133,7 +133,7 @@ def parse(html, contest_title=CONTEST_TITLE):
     spans = [c.get(k) for k in c.spans]
     try:
         i = spans.index("Ballots Counted")
-        ballots = _whole_number(spans[i + 1], "Ballots Counted")
+        ballots = whole_number(spans[i + 1], "Ballots Counted")
     except (ValueError, IndexError):
         raise ParseError("'Ballots Counted' not found")
 
@@ -154,7 +154,7 @@ def parse(html, contest_title=CONTEST_TITLE):
         # The name cell repeats the label for screen readers ("YES YES")
         words = row["candidate"].upper().split()
         name = words[0] if words and len(set(words)) == 1 else " ".join(words)
-        by_name[name] = _whole_number(row["votes"], f"{name} votes")
+        by_name[name] = whole_number(row["votes"], f"{name} votes")
     if set(by_name) != {"YES", "NO"}:
         raise ParseError(f"expected YES and NO rows, found {sorted(by_name)}")
 

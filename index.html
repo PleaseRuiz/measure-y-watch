@@ -264,6 +264,9 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
 
   var params = new URLSearchParams(location.search);
   var DEMO = params.get('demo') === '1';
+  // Rehearsal only (remove after the rehearsal): made-up updates from data/rehearsal.json.
+  var REHEARSAL = params.get('rehearsal') === '1';
+  if (REHEARSAL) DATA_URL = 'data/rehearsal.json';
   // In demo mode, pretend it's just after the last sample update so the schedule reads right.
   var nowMs = function () { return DEMO ? new Date(SAMPLE.latest.county_updated).getTime() + 60000 : Date.now(); };
   var PASS_HALF = '50% + 1';
@@ -319,7 +322,9 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   }
 
   // A release counts as done once its time passes, or once the county posts within 3 hours before it.
+  // The hourly block is done once its last hour has passed.
   function isDone(s, now, lastUpd) {
+    if (s.hourlyUntil) return now >= new Date(s.hourlyUntil).getTime();
     var t = new Date(s.t).getTime();
     return t <= now || (lastUpd !== null && lastUpd > t - 3 * 3600000);
   }
@@ -359,13 +364,13 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
 
   function renderMoves(history) {
     el.moves.innerHTML = '';
-    if (!history || !history.length) {
+    var rows = (history || []).filter(function (h) { return h.yes + h.no > 0; });
+    if (!rows.length) {
       var li = document.createElement('li'); li.className = 'empty';
       li.textContent = 'Each county update will show up here.';
       el.moves.appendChild(li);
       return;
     }
-    var rows = history.filter(function (h) { return h.yes + h.no > 0; });
     for (var i = rows.length - 1; i >= 0; i--) {
       var h = rows[i];
       var s = shareOf(h);
@@ -399,18 +404,19 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     el.hiLabel.textContent = Math.round(T + SPAN) + '%';
     if (d.source_url) el.sourceLink.href = d.source_url;
     var L = d.latest || { yes: 0, no: 0 };
-    var lastUpd = L.county_updated ? new Date(L.county_updated).getTime() : null;
+    // Only a post with votes counts as a release; the county can re-stamp its zero report.
+    var lastUpd = L.county_updated && L.yes + L.no > 0 ? new Date(L.county_updated).getTime() : null;
     renderSchedule(now, lastUpd);
     el.nextUpdate.textContent = nextUpdateLabel(now, lastUpd);
 
     var total = L.yes + L.no;
     var share = shareOf(L);
 
-    if (DEMO) { setPill('sample', 'SAMPLE DATA'); el.updated.textContent = 'Made-up numbers, not real results'; }
+    if (DEMO || REHEARSAL) { setPill('sample', 'SAMPLE DATA'); el.updated.textContent = 'Made-up numbers, not real results'; }
     else if (d.status === 'final') { setPill('', 'CERTIFIED'); }
     else if (total > 0) { setPill('live', 'LIVE COUNT'); }
     else { setPill('', 'WAITING'); }
-    if (!DEMO) {
+    if (!DEMO && !REHEARSAL) {
       el.updated.textContent = L.county_updated ? 'County update: ' + dtLong.format(new Date(L.county_updated)) : 'First results Tue, Nov 3 at 8:10 PM';
     }
 
