@@ -23,6 +23,11 @@ on:
         description: "Manual entry: the county's Website Updated time, e.g. 11/3/2026 8:10:45 PM (blank = now)"
         required: false
         type: string
+      allow_decrease:
+        description: "Accept YES or NO going down, for this run only (a county correction or fixing a typo)"
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -68,6 +73,7 @@ jobs:
           MANUAL_YES: ${{ inputs.yes }}
           MANUAL_NO: ${{ inputs.no }}
           MANUAL_COUNTY_UPDATED: ${{ inputs.county_updated }}
+          ALLOW_DECREASE: ${{ inputs.allow_decrease }}
         run: python scraper/update.py
 
       - name: Save last county fetch time

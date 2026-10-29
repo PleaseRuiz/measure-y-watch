@@ -7,6 +7,7 @@ Modes, picked from the environment:
   EVENT=push                      no fetch; only copies expected_votes from config.json
   MANUAL_YES / MANUAL_NO set      manual entry (MANUAL_COUNTY_UPDATED optional)
   otherwise                       one fetch of the county page
+ALLOW_DECREASE=true (only set by a hand-started run) lets this run's reading go below the saved YES or NO.
 """
 
 import http.client
@@ -111,7 +112,7 @@ def county_reading(now):
             "county_ballots_counted": r["county_ballots_counted"], "source": "county"}
 
 
-def apply_reading(results, reading, now):
+def apply_reading(results, reading, now, allow_decrease=False):
     """Add the reading if it's a new county update. Returns True if it was added."""
     latest = results.get("latest") or {}
     saved = latest.get("county_updated")
@@ -123,7 +124,9 @@ def apply_reading(results, reading, now):
     for side in ("yes", "no"):
         before = latest.get(side) or 0
         if reading[side] < before:
-            raise CheckFailed(f"{side.upper()} went down: {before:,} -> {reading[side]:,}")
+            if not allow_decrease:
+                raise CheckFailed(f"{side.upper()} went down: {before:,} -> {reading[side]:,}")
+            print(f"{side.upper()} went down: {before:,} -> {reading[side]:,} (allowed for this run)")
 
     entry = {
         "yes": reading["yes"],
@@ -173,7 +176,7 @@ def main():
                 print(f"Ballots Counted:  {reading['county_ballots_counted']:,}")
             print(f"YES:              {reading['yes']:,}")
             print(f"NO:               {reading['no']:,}")
-            added = apply_reading(results, reading, now)
+            added = apply_reading(results, reading, now, os.environ.get("ALLOW_DECREASE") == "true")
 
         results["expected_votes"] = expected_votes
     except CheckFailed as e:
