@@ -98,3 +98,29 @@ test('the trajectory has one point per distinct report', function () {
   var t = M.trajectory(data([[3400, 3000, FIRST], [3400, 3000, NIGHT], [3900, 3500, THU]]), P, { sims: 2000 });
   assert.strictEqual(t.length, 2);
 });
+
+test('a first report stamped late is still the early-mail baseline', function () {
+  var onTime = M.forecast(data([[3380, 3120, FIRST]]), P).pYes;
+  var late = M.forecast(data([[3380, 3120, '2026-11-03T21:05:00-08:00']]), P).pYes;
+  assert.ok(Math.abs(onTime - late) < 0.05, 'on time ' + onTime + ' vs late ' + late);
+});
+
+test('a razor-thin finish is not called early', function () {
+  // A 10-vote YES lead after the last scheduled update, every batch breaking about even,
+  // and a few hundred votes possibly left: too close for the needle to be sure either way.
+  var r = M.forecast(data([[3200, 3200, FIRST], [3600, 3600, NIGHT], [4400, 4400, THU], [5000, 5000, MON], [5205, 5195, LAST]]), P);
+  assert.ok(r.pYes < 0.9 && r.pYes > 0.1, 'chance ' + r.pYes);
+});
+
+test('a correction below several earlier reports keeps the counts growing', function () {
+  var h = M.cleanHistory(data([[3400, 3000, FIRST], [3600, 3100, NIGHT], [3700, 3200, THU], [3500, 3050, MON]]), P);
+  for (var i = 1; i < h.length; i++) assert.ok(h[i].yes >= h[i - 1].yes && h[i].no >= h[i - 1].no);
+  assert.strictEqual(h[h.length - 1].yes, 3500);
+});
+
+test('counts stored as text are read as numbers', function () {
+  var a = M.forecast(data([[3400, 3000, FIRST]]), P).pYes;
+  var b = M.forecast(data([['3400', '3000', FIRST]]), P).pYes;
+  assert.strictEqual(a, b);
+  assert.strictEqual(M.forecast(data([['3,400', '3000', FIRST]]), P).status, 'waiting', 'unparseable counts are ignored');
+});

@@ -9,6 +9,7 @@ Modes, picked from the environment:
   otherwise                       one fetch of the county page
 ALLOW_DECREASE=true (only set by a hand-started run) lets this run's reading go below the saved YES or NO.
 PRACTICE=1 (rehearsal only) writes data/rehearsal.json instead and never fetches the county page.
+MARK_CERTIFIED=true (hand-started run) marks the count final once the county has certified it.
 """
 
 import http.client
@@ -159,6 +160,7 @@ def main():
     try:
         results = load_json(RESULTS, f"data/{RESULTS.name}")
         before = json.dumps(results)
+        was_final = results.get("status") == "final"
         expected_votes = read_expected_votes()
 
         reading = None
@@ -183,6 +185,13 @@ def main():
             added = apply_reading(results, reading, now, os.environ.get("ALLOW_DECREASE") == "true")
 
         results["expected_votes"] = expected_votes
+
+        if os.environ.get("MARK_CERTIFIED") == "true":
+            latest = results.get("latest") or {}
+            if (latest.get("yes") or 0) + (latest.get("no") or 0) == 0:
+                raise CheckFailed("can't mark the count certified before any votes are counted")
+            results["status"] = "final"
+            print("Marked the count as certified")
     except CheckFailed as e:
         print(f"Check failed: {e}")
         print("Nothing written.")
@@ -198,6 +207,8 @@ def main():
     os.replace(tmp, RESULTS)
     if added:
         message = f"Update results: {reading['source']} reading, county update {reading['county_updated']}"
+    elif results.get("status") == "final" and not was_final:
+        message = "Mark the count as certified"
     else:
         message = "Update expected_votes from config.json"
     print(f"Saved {RESULTS.name} ({message})")

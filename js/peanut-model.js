@@ -56,16 +56,17 @@
   // Reports with votes, oldest first, one per distinct count. With remapTimes, report i is
   // treated as if it arrived at the i-th scheduled county release (used for demo and rehearsal data).
   function cleanHistory(data, priors, remapTimes) {
-    var rows = ((data && data.history) || []).filter(function (h) {
-      return h && isFinite(h.yes) && isFinite(h.no) && h.yes >= 0 && h.no >= 0 && h.yes + h.no > 0 && toMs(h.county_updated) !== null;
-    }).map(function (h) {
-      return { yes: h.yes, no: h.no, n: h.yes + h.no, t: toMs(h.county_updated), when: h.county_updated };
-    }).sort(function (a, b) { return a.t - b.t; });
+    var rows = ((data && data.history) || []).map(function (h) {
+      return h ? { yes: Number(h.yes), no: Number(h.no), t: toMs(h.county_updated), when: h.county_updated } : null;
+    }).filter(function (h) {
+      return h && Number.isInteger(h.yes) && Number.isInteger(h.no) && h.yes >= 0 && h.no >= 0 && h.yes + h.no > 0 && h.t !== null;
+    }).map(function (h) { h.n = h.yes + h.no; return h; }).sort(function (a, b) { return a.t - b.t; });
     var out = [];
     rows.forEach(function (r) {
       var prev = out[out.length - 1];
       if (prev && prev.yes === r.yes && prev.no === r.no) return; // a re-stamp, not new votes
-      if (prev && (r.yes < prev.yes || r.no < prev.no)) { out.pop(); } // a correction replaces the report before it
+      // A correction replaces every earlier report it undercuts, so the counts only ever grow.
+      while (out.length && (r.yes < out[out.length - 1].yes || r.no < out[out.length - 1].no)) out.pop();
       out.push(r);
     });
     if (remapTimes && priors && priors.demo_release_times) {
@@ -101,53 +102,52 @@
     return { mean: lastPt.counted_share, sd: lastPt.sd };
   }
 
-  // The scheduled share counted at the last release of election night.
-  function nightEndSchedule(priors) {
-    var end = toMs(priors.phases.election_night_ends), best = priors.schedule[0];
-    priors.schedule.forEach(function (pt) { if (toMs(pt.at) < end) best = pt; });
-    return { mean: best.counted_share, sd: best.sd };
-  }
-
   // ---------- how many votes there will be (exact Gaussian conditioning in log space) ----------
 
-  // Unknowns: x = log(total votes on Y) and, for the baseline report, the latest report and the
-  // end of election night, w = log(share of the final count done by then). Releases share one
-  // "counting speed" factor, so their w's are correlated (rho). Each report we have says
-  // log(votes counted) = w + x, give or take a little. Conditioning on those turns the turnout
-  // prior and the schedule prior into a posterior for x and the end-of-night share.
-  function totalsPosterior(base, last, priors, scheds) {
+  // Unknowns: x = log(total votes on Y) and, for each report we condition on, w = log(share of the
+  // final count done by then). Releases share one "counting speed" factor, so their w's are
+  // correlated (rho). Each report says log(votes counted) = w + x, give or take a little.
+  // Conditioning on those turns the turnout prior and the schedule prior into a posterior for x.
+  function totalsPosterior(reports, priors) {
     var T = priors.turnout, rho = priors.schedule_correlation, tau = priors.noise.count_log_sd;
-    var rel = scheds.map(function (q) { return q.sd / q.mean; });
-    var mu = [Math.log(T.y_votes_median)].concat(scheds.map(function (q) { return Math.log(q.mean); }));
-    var S = [[T.y_votes_log_sd * T.y_votes_log_sd, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]];
-    for (var i = 1; i < 4; i++) for (var j = 1; j < 4; j++) S[i][j] = (i === j ? 1 : rho) * rel[i - 1] * rel[j - 1];
-    var obs = [{ h: [1, 1, 0, 0], o: Math.log(base.n) }];
-    if (last !== base) obs.push({ h: [1, 0, 1, 0], o: Math.log(last.n) });
-    obs.forEach(function (ob) {
-      var Sh = [0, 1, 2, 3].map(function (r) { return S[r][0] * ob.h[0] + S[r][1] * ob.h[1] + S[r][2] * ob.h[2] + S[r][3] * ob.h[3]; });
-      var hSh = ob.h[0] * Sh[0] + ob.h[1] * Sh[1] + ob.h[2] * Sh[2] + ob.h[3] * Sh[3] + tau * tau;
-      var resid = ob.o - (ob.h[0] * mu[0] + ob.h[1] * mu[1] + ob.h[2] * mu[2] + ob.h[3] * mu[3]);
-      for (var r = 0; r < 4; r++) {
+    var k = reports.length, n = k + 1;
+    var mu = [Math.log(T.y_votes_median)], S = [];
+    reports.forEach(function (rep) { mu.push(Math.log(rep.sched.mean)); });
+    for (var i = 0; i < n; i++) { S.push([]); for (var j = 0; j < n; j++) S[i].push(0); }
+    S[0][0] = T.y_votes_log_sd * T.y_votes_log_sd;
+    for (i = 1; i < n; i++) for (j = 1; j < n; j++) {
+      var si = reports[i - 1].sched.sd / reports[i - 1].sched.mean, sj = reports[j - 1].sched.sd / reports[j - 1].sched.mean;
+      S[i][j] = (i === j ? 1 : rho) * si * sj;
+    }
+    reports.forEach(function (rep, idx) {
+      var h = []; for (var c = 0; c < n; c++) h.push(c === 0 || c === idx + 1 ? 1 : 0);
+      var Sh = S.map(function (row) { var acc = 0; for (var c2 = 0; c2 < n; c2++) acc += row[c2] * h[c2]; return acc; });
+      var hSh = tau * tau, pred = 0;
+      for (var c3 = 0; c3 < n; c3++) { hSh += h[c3] * Sh[c3]; pred += h[c3] * mu[c3]; }
+      var resid = Math.log(rep.n) - pred;
+      for (var r = 0; r < n; r++) {
         mu[r] += Sh[r] / hSh * resid;
-        for (var c = 0; c < 4; c++) S[r][c] -= Sh[r] * Sh[c] / hSh;
+        for (var c4 = 0; c4 < n; c4++) S[r][c4] -= Sh[r] * Sh[c4] / hSh;
       }
     });
-    // Joint draws of (x, w at end of night): Cholesky of that 2x2 block.
-    var a = Math.sqrt(Math.max(S[0][0], 1e-12)), b = S[3][0] / a, c2 = Math.sqrt(Math.max(S[3][3] - b * b, 1e-12));
-    return { mean: [mu[0], mu[3]], chol: [a, b, c2], sdLogTotal: a };
+    return { meanLog: mu[0], sdLog: Math.sqrt(Math.max(S[0][0], 1e-12)) };
   }
 
   // ---------- learning how the later batches lean (two-dimensional Gaussian update) ----------
 
   // Leans are (YES share of a batch) minus (YES share of the baseline early mail).
+  // The lean can drift a little from one update to the next within a group (the mix of ballots
+  // changes), so each further update in a group adds lean_drift_sd of fresh uncertainty first.
   function leanPosterior(base, increments, priors) {
-    var L = priors.leans;
+    var L = priors.leans, q = priors.noise.lean_drift_sd || 0, seen = [false, false];
     var m = [L.election_night.mean, L.post_election.mean];
     var s1 = L.election_night.sd, s2 = L.post_election.sd, rho = L.correlation;
     var S = [[s1 * s1, rho * s1 * s2], [rho * s1 * s2, s2 * s2]];
     increments.forEach(function (inc) {
       if (inc.n < priors.noise.min_increment_votes || inc.phase === 0) return;
       var j = inc.phase === 1 ? 0 : 1;
+      if (seen[j]) S[j][j] += q * q;
+      seen[j] = true;
       var p = inc.yes / inc.n;
       var r = priors.noise.increment_sd * priors.noise.increment_sd + p * (1 - p) / inc.n;
       var k0 = S[0][j] / (S[j][j] + r), k1 = S[1][j] / (S[j][j] + r);
@@ -172,6 +172,11 @@
       k = Math.sqrt(tailDf / Math.max(chi, 1e-9));
     }
     return [post.mean[0] + k * a * z1, post.mean[1] + k * (b * z1 + c * z2)];
+  }
+
+  function tailWidth(priors) {
+    var df = priors.leans.tail_df;
+    return df && df > 2 ? Math.sqrt(df / (df - 2)) : 1;
   }
 
   // ---------- weighted summaries ----------
@@ -200,6 +205,7 @@
    *   opts.sims: number of simulations (default priors.sims)
    *   opts.upTo: only use reports up to and including this index (for the "how it moved" chart)
    *   opts.remapTimes: place report i at the i-th scheduled release (demo/rehearsal data)
+   *   opts.keepDraws: also return the simulated final YES shares (for back-testing)
    */
   function forecast(data, priors, opts) {
     opts = opts || {};
@@ -215,6 +221,10 @@
     }
 
     hist.forEach(function (h) { h.phase = phaseOf(h.t, priors); });
+    // A first report stamped during the night (late, or the 8:10 PM one was missed) still stands in
+    // for the early mail; only a first report from after election night leaves the baseline mixed.
+    var lateFirst = hist[0].phase === 1;
+    if (lateFirst) hist[0].phase = 0;
     var nowPhase = last.phase;
 
     // Baseline: the YES share at the end of the first batch (normally the 8:10 PM early mail).
@@ -222,7 +232,7 @@
     while (baseIdx + 1 < hist.length && hist[0].phase === 0 && hist[baseIdx + 1].phase === 0) baseIdx++;
     var base = hist[baseIdx];
     var baseShare = base.yes / base.n;
-    var baseMixed = hist[0].phase !== 0;
+    var baseMixed = lateFirst || hist[0].phase !== 0;
 
     var increments = [];
     for (var k = baseIdx + 1; k < hist.length; k++) {
@@ -231,27 +241,35 @@
     }
     var post = leanPosterior(baseShare, increments, priors);
 
-    var tot = totalsPosterior(base, last, priors, [scheduleAt(base.t, priors), scheduleAt(last.t, priors), nightEndSchedule(priors)]);
+    // Election-night reports add vote-center ballots only, so the total is learned from the
+    // first report and from post-election reports.
+    var anchors = [{ n: base.n, sched: scheduleAt(base.t, priors) }];
+    if (nowPhase === 2 && last !== base) anchors.push({ n: last.n, sched: scheduleAt(last.t, priors) });
+    var tot = totalsPosterior(anchors, priors);
+    var countedNight = nowPhase === 1 ? last.n - base.n : 0;
+    var VC = priors.phases.vote_center_share;
 
     var sims = opts.sims || priors.sims || 40000;
     var seed = hashString(JSON.stringify([hist.map(function (h) { return [h.yes, h.no, h.t]; }), priors.version]));
     var rng = makeRng(seed);
     var Nz = priors.noise;
+    var futureSd = Math.sqrt(Nz.remaining_batch_sd * Nz.remaining_batch_sd + Math.pow(Nz.lean_drift_sd || 0, 2));
     var finals = new Array(sims), remaining = new Array(sims), totals = new Array(sims), pass = 0;
 
     for (var s = 0; s < sims; s++) {
-      var z1 = rng.normal(), z2 = rng.normal();
-      var V = Math.exp(tot.mean[0] + tot.chol[0] * z1);
-      var cNight = Math.min(1, Math.exp(tot.mean[1] + tot.chol[1] * z1 + tot.chol[2] * z2));
-
+      var V = Math.exp(tot.meanLog + tot.sdLog * rng.normal());
       var R = Math.max(0, V - last.n);
-      // Votes still to come on election night (only before the night ends); the rest come after.
-      var R1 = nowPhase <= 1 && !baseMixed ? clamp(cNight * V - last.n, 0, R) : 0;
+      // Vote-center ballots still to come on election night (before the night ends); the rest come after.
+      var vc = clamp(VC.mean + VC.sd * rng.normal(), 0.01, 0.3);
+      var R1 = nowPhase <= 1 ? clamp(vc * V - countedNight, 0, R) : 0;
       var R2 = R - R1;
 
       var lean = drawPair(rng, post, priors.leans.tail_df);
-      var p1 = clamp(baseShare + lean[0] + Nz.remaining_batch_sd * rng.normal(), 0.01, 0.99);
-      var p2 = clamp(baseShare + lean[1] + Nz.remaining_batch_sd * rng.normal(), 0.01, 0.99);
+      // Ballots not yet counted can drift from the ones counted so far, plus ordinary sampling noise.
+      var p1 = clamp(baseShare + lean[0] + futureSd * rng.normal(), 0.01, 0.99);
+      var p2 = clamp(baseShare + lean[1] + futureSd * rng.normal(), 0.01, 0.99);
+      if (R1 > 0) p1 = clamp(p1 + Math.sqrt(p1 * (1 - p1) / R1) * rng.normal(), 0.01, 0.99);
+      if (R2 > 0) p2 = clamp(p2 + Math.sqrt(p2 * (1 - p2) / R2) * rng.normal(), 0.01, 0.99);
       var total = last.n + R;
       var shareFinal = (last.yes + R1 * p1 + R2 * p2) / total + Nz.model_sd * (R / total) * rng.normal();
 
@@ -276,16 +294,18 @@
       totalVotes: totQ,
       countedFraction: last.n / totQ[0.5],
       baseShare: baseShare,
+      // Spread of each lean as drawn (Student-t draws are wider than their scale).
       leans: {
-        electionNight: { mean: post.mean[0], sd: Math.sqrt(post.cov[0][0]) },
-        postElection: { mean: post.mean[1], sd: Math.sqrt(post.cov[1][1]) }
+        electionNight: { mean: post.mean[0], sd: Math.sqrt(post.cov[0][0]) * tailWidth(priors) },
+        postElection: { mean: post.mean[1], sd: Math.sqrt(post.cov[1][1]) * tailWidth(priors) }
       },
       // The share of the remaining votes the trailing side would need to come back (median remaining).
       trailingNeeds: remMid > 0 && margin !== 0 ? {
         side: margin > 0 ? 'NO' : 'YES',
         share: (remMid + Math.abs(margin)) / (2 * remMid)
       } : null,
-      sims: sims
+      sims: sims,
+      draws: opts.keepDraws ? finals : undefined
     };
   }
 
@@ -300,6 +320,26 @@
     };
   }
 
+  // The wobble: the middle half of the chances Peanut gets when its assumptions (lean means,
+  // counting pace and turnout) are each redrawn from their own uncertainty, 24 times.
+  function wobble(data, priors, opts) {
+    opts = opts || {};
+    var J = opts.sets || 24, K = opts.scale || 1, L = priors.leans, ps = [];
+    var rng = makeRng(hashString('wobble' + JSON.stringify((data && data.history) || [])));
+    for (var j = 0; j < J; j++) {
+      var p2 = JSON.parse(JSON.stringify(priors));
+      var z1 = rng.normal(), z2 = L.correlation * z1 + Math.sqrt(1 - L.correlation * L.correlation) * rng.normal(), z3 = rng.normal(), z4 = rng.normal();
+      p2.leans.election_night.mean += K * z1 * L.election_night.sd;
+      p2.leans.post_election.mean += K * z2 * L.post_election.sd;
+      p2.schedule.forEach(function (pt) { pt.counted_share = Math.min(1, pt.counted_share * Math.exp(K * z3 * pt.sd / pt.counted_share)); });
+      p2.turnout.y_votes_median *= Math.exp(K * z4 * priors.turnout.y_votes_log_sd);
+      ps.push(forecast(data, p2, { sims: opts.sims || 2500, remapTimes: opts.remapTimes }).pYes);
+    }
+    ps.sort(function (a, b) { return a - b; });
+    function q(p) { var i = p * (ps.length - 1), lo = Math.floor(i), hi = Math.ceil(i); return ps[lo] + (ps[hi] - ps[lo]) * (i - lo); }
+    return { lo: q(0.25), hi: q(0.75) };
+  }
+
   // The forecast after each report, for the "how the needle moved" chart.
   function trajectory(data, priors, opts) {
     opts = opts || {};
@@ -311,7 +351,7 @@
   }
 
   return {
-    forecast: forecast, trajectory: trajectory, cleanHistory: cleanHistory, phaseOf: phaseOf,
+    forecast: forecast, trajectory: trajectory, wobble: wobble, cleanHistory: cleanHistory, phaseOf: phaseOf,
     scheduleAt: scheduleAt, leanPosterior: leanPosterior, makeRng: makeRng, hashString: hashString
   };
 });

@@ -28,6 +28,11 @@ on:
         required: false
         type: boolean
         default: false
+      certified:
+        description: "The county has certified the count (Dec 3 or later): mark the results final"
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -76,6 +81,7 @@ jobs:
           MANUAL_NO: ${{ inputs.no }}
           MANUAL_COUNTY_UPDATED: ${{ inputs.county_updated }}
           ALLOW_DECREASE: ${{ inputs.allow_decrease }}
+          MARK_CERTIFIED: ${{ inputs.certified }}
         run: python scraper/update.py
 
       - name: Save last county fetch time

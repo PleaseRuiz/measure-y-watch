@@ -1,50 +1,50 @@
 {
-  "version": "draft-1",
+  "version": "2026-10-29.3",
   "sims": 40000,
   "turnout": {
-    "y_votes_median": 11800,
-    "y_votes_log_sd": 0.12
+    "y_votes_median": 11300,
+    "y_votes_log_sd": 0.11
   },
   "schedule": [
     {
       "at": "2026-11-03T20:10:00-08:00",
-      "counted_share": 0.55,
-      "sd": 0.08
+      "counted_share": 0.48,
+      "sd": 0.1
     },
     {
       "at": "2026-11-04T03:00:00-08:00",
-      "counted_share": 0.72,
-      "sd": 0.06
+      "counted_share": 0.565,
+      "sd": 0.1
     },
     {
       "at": "2026-11-05T16:30:00-08:00",
-      "counted_share": 0.83,
-      "sd": 0.05
+      "counted_share": 0.66,
+      "sd": 0.09
     },
     {
       "at": "2026-11-06T16:30:00-08:00",
-      "counted_share": 0.88,
-      "sd": 0.04
+      "counted_share": 0.72,
+      "sd": 0.08
     },
     {
       "at": "2026-11-09T16:30:00-08:00",
-      "counted_share": 0.93,
-      "sd": 0.03
+      "counted_share": 0.82,
+      "sd": 0.06
     },
     {
       "at": "2026-11-12T09:30:00-08:00",
-      "counted_share": 0.96,
-      "sd": 0.02
+      "counted_share": 0.89,
+      "sd": 0.045
     },
     {
       "at": "2026-11-13T16:30:00-08:00",
-      "counted_share": 0.97,
-      "sd": 0.015
+      "counted_share": 0.93,
+      "sd": 0.035
     },
     {
       "at": "2026-11-16T16:30:00-08:00",
-      "counted_share": 0.985,
-      "sd": 0.01
+      "counted_share": 0.96,
+      "sd": 0.02
     },
     {
       "at": "2026-12-03T17:00:00-08:00",
@@ -55,26 +55,31 @@
   "schedule_correlation": 0.7,
   "phases": {
     "first_report_ends": "2026-11-03T20:55:00-08:00",
-    "election_night_ends": "2026-11-04T08:00:00-08:00"
+    "election_night_ends": "2026-11-04T08:00:00-08:00",
+    "vote_center_share": {
+      "mean": 0.085,
+      "sd": 0.025
+    }
   },
   "leans": {
     "election_night": {
-      "mean": -0.03,
-      "sd": 0.04
+      "mean": -0.06,
+      "sd": 0.06
     },
     "post_election": {
-      "mean": 0.015,
-      "sd": 0.035
+      "mean": 0.04,
+      "sd": 0.045
     },
-    "correlation": 0.3,
+    "correlation": 0.6,
     "tail_df": 5
   },
   "noise": {
     "increment_sd": 0.02,
     "min_increment_votes": 50,
     "remaining_batch_sd": 0.01,
+    "lean_drift_sd": 0.02,
     "model_sd": 0.01,
-    "count_log_sd": 0.03
+    "count_log_sd": 0.005
   },
   "demo_release_times": [
     "2026-11-03T20:10:00-08:00",
@@ -83,5 +88,47 @@
     "2026-11-05T16:30:00-08:00",
     "2026-11-09T16:30:00-08:00",
     "2026-11-13T16:30:00-08:00"
+  ],
+  "explain": [
+    {
+      "name": "Votes on Measure Y",
+      "value": "about 11,300 (\u00b111%)",
+      "why": "Belmont has 17,435 registered voters in the county's precinct data. It cast 11,060 ballots in Nov 2022 and 14,219 in Nov 2024, usually turning out 4 to 13% above the county rate, and 5 to 9% of Belmont ballots skip city measures. Ballot returns this fall are running ahead of 2022."
+    },
+    {
+      "name": "Counted in the 8:10 PM report",
+      "value": "48% (\u00b110)",
+      "why": "In past San Mateo County elections the first report held 31 to 49% of the final count, with mail received by the Friday before. This year it includes mail received through Sunday, so it should hold more. In Nov 2024, ballots received by the Sunday before were 56% of the final count."
+    },
+    {
+      "name": "Election-night updates",
+      "value": "vote-center ballots, about 8.5% (\u00b12.5) of the total",
+      "why": "After 8:10 PM the county adds only ballots cast in person at vote centers. They were 6.3% of the votes on Belmont's 2022 city measure and 10.6% in 2024."
+    },
+    {
+      "name": "Counted by later updates",
+      "value": "66% Thu Nov 5, 72% Fri, 82% Mon Nov 9, 89% Thu Nov 12, 93% Fri, 96% Mon Nov 16",
+      "why": "Based on the county's pace in Nov 2022, Nov 2024 and June 2026, shifted up for this year's bigger first report. Mail postmarked by Election Day counts if it arrives by Nov 10; signature fixes are due Nov 25; the county certifies Dec 3."
+    },
+    {
+      "name": "Vote-center ballots vs early mail",
+      "value": "6 points less YES (\u00b16)",
+      "why": "In-person voters have been less supportive of local measures than mail voters: about 5 points across San Mateo County measures in 2022 to 2026, and 7 to 15 points on Belmont's own 2022 and 2024 city measures."
+    },
+    {
+      "name": "Post-election ballots vs early mail",
+      "value": "4 points more YES (\u00b14.5)",
+      "why": "Ballots counted after election night moved all 12 paired San Mateo County property-tax measures toward YES (by 0.8 to 7.3 points in the final result); on those measures late mail ran about 6 points more YES than early mail. Late mail comes from younger voters and fewer homeowners. Measure Y exempts senior homeowners who apply, which may narrow that gap, so this is set below the history."
+    },
+    {
+      "name": "How the two groups move together",
+      "value": "correlation 0.6",
+      "why": "When in-person voters differ from the early mail on a measure, late mail has tended to differ in the same direction."
+    },
+    {
+      "name": "Surprises",
+      "value": "fat tails, plus 2 points of drift for late ballots not yet counted",
+      "why": "Big late swings are rare but real, and close San Mateo County measures have flipped during the canvass. Fat tails (a Student-t with 5 degrees of freedom) keep Peanut from claiming certainty too early."
+    }
   ]
 }

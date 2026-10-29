@@ -25,6 +25,8 @@ GitHub app or github.com: **Actions → Update results → Run workflow** (branc
   (e.g. `11/3/2026 8:10:45 PM`; blank uses the current time). Saved with `"source": "manual"`.
 - **Allow decrease**: tick only when the county really lowered a count, or to fix a
   manual typo. Applies to that one run.
+- **Certified**: tick once, after the county certifies the count (Dec 3). The page then shows
+  CERTIFIED and the forecast tab shows the final result.
 
 A run fails (red, and GitHub emails you) when the contest title changes, a number isn't a
 whole number, YES or NO goes down, a manual time isn't newer than the saved one, or the
