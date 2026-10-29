@@ -30,7 +30,8 @@ GitHub app or github.com: **Actions → Update results → Run workflow** (branc
   The time is required: a made-up time could make the county's next update look old and get
   skipped. Saved with `"source": "manual"`.
 - **Allow decrease**: tick only when the county really lowered a count, or to fix a
-  manual typo. Applies to that one run.
+  manual typo. Applies to that one run. If the county itself lowered a count while you were
+  typing entries by hand, also turn the forecast tab off (see below).
 - **Certified**: tick once, after the county certifies the count (Dec 3). The page then shows
   CERTIFIED and the forecast tab shows the final result. It's refused before Nov 17. If it was
   ticked by mistake, edit `data/results.json` on `main` (github.com, pencil icon) and change

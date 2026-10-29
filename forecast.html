@@ -313,13 +313,13 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
         <li><b>Election night (9 PM, then hourly): in-person ballots.</b> These updates add only ballots cast at vote centers. In past county elections those voters were less supportive of local measures than mail voters, so Peanut expects YES to slip during the night.</li>
         <li><b>Nov 5 to Nov 16: late ballots.</b> Mail dropped off on Election Day or arriving by Nov 10, plus provisional ballots and signature fixes. Late mail tends to come from younger voters, and on property taxes late ballots have run more YES than early mail, so Peanut expects YES to recover after election night.</li>
       </ul>
-      <p>Each group gets a "lean": how many points more or less YES it is than the early mail. Peanut starts each lean from county history and updates it from every new county update (a standard Bayesian update; small updates count for less, and the lean is allowed to drift a little from one update to the next). The two leans are linked: if in-person ballots come in well below what Peanut expects, it also lowers what it expects from late ballots (and raises it if they come in better), because in county history the measures with the worst in-person gaps had the weakest late ballots.</p>
+      <p>Each group gets a "lean": how many points more or less YES it is than the early mail. Peanut starts each lean from county history and updates it from every new county update (a standard Bayesian update; small updates count for less, and the lean is allowed to drift a little from one update to the next). The two leans are linked: if in-person ballots come in well below what Peanut expects, it also lowers what it expects from late ballots (and raises it if they come in with more YES), because in county history the measures whose in-person ballots fell furthest below the early mail also had late ballots with the least YES.</p>
 
       <h3>What county history says</h3>
       <ul>
         <li><b>In-person ballots run less YES.</b> Across 70 San Mateo County measures since 2020 with at least 200 in-person votes, in-person ballots ran about 4.5 points less YES than all mail ballots; on Belmont's own city measures the gap was 15.5 points in 2022 and 6.9 in 2024. Measured against the early mail alone, as Peanut does, the gap ran from about 1 to 5 points on the county's 2022 school bonds to about 16 to 17 on its 2022 hotel taxes, including Belmont's Measure K. (Computed from the county's certified results and election-night news counts.)</li>
         <li><b>Late ballots have moved property taxes toward YES.</b> In 12 county property-tax measures (parcel taxes, school bonds and one city bond) where an election-night count could be paired with the final count, YES gained every time, by 0.8 to 7.3 points. In the March 2020 primary, YES finished 2 to 10 points higher than the county's own 8:56 PM election-night snapshot on all seven school measures. On the county's Nov 2022 school bonds, late ballots ran about 3 to 6 points more YES than the early mail. Belmont's own city taxes that weren't property taxes barely moved after election night: against the early mail, late ballots on Belmont's 2022 hotel tax ran about 2 points less YES. (Pairs compiled from local news reports and the county's results.)</li>
-        <li><b>Measure Y is unusual.</b> It's a citizen-initiated special tax on building square footage that passes with a simple majority, with an exemption for senior homeowners who apply. Peanut can't tell yet whether it will behave like the county's school taxes, where late ballots ran more YES, or like Belmont's own non-property city taxes, whose late ballots ran a little less YES than the early mail, so it assumes a late shift between the two, closer to the school taxes.</li>
+        <li><b>Measure Y is unusual.</b> It's a citizen-initiated special tax on building square footage that passes with a simple majority, with an exemption for senior homeowners who apply. Peanut can't tell yet whether it will behave like the county's school taxes, where late ballots ran more YES, or like Belmont's 2022 hotel tax, whose late ballots ran about 2 points less YES than the early mail, so it assumes a late shift between the two, closer to the school taxes.</li>
       </ul>
 
       <h3>How many votes are left</h3>
@@ -354,7 +354,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
       <h3>What could go wrong</h3>
       <ul>
         <li>The needle may fall sharply on election night. In-person voters in the 2022 midterm were much less supportive of local measures, and a big in-person slide also lowers what Peanut expects from late ballots, so the needle can drop overnight and recover from Thu, Nov 5 if late ballots still run more YES than the early mail.</li>
-        <li>Late ballots might not run more YES than the early mail this time. If they match it, Peanut will be too optimistic about YES until the first post-election update on Thu, Nov 5 shows it.</li>
+        <li>Late ballots might not run more YES than the early mail this time. If they match it, Peanut will overstate YES's chances until the first post-election update on Thu, Nov 5 shows it.</li>
         <li>The county could count in a different order than usual, or post a correction.</li>
         <li>If the 8:10 PM report is missed or stamped late, the baseline includes some in-person ballots and is a bit muddier.</li>
       </ul>
@@ -671,7 +671,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
       var dn = h[i].n - h[i - 1].n, dy = h[i].yes - h[i - 1].yes;
       if (dn < 50 || dy < 0 || dy > dn) continue;
       // A batch a county correction made unsure isn't shown (the forecast leaves it out of "so far" too).
-      if (h[i].unsure > 0.02) return null;
+      if (h[i].unsure > 0) return null;
       var phase = M.phaseOf(h[i].g, state.priors);
       return { share: dy / dn, n: dn, kind: phase === 2 ? 'late ballots' : phase === 1 ? 'in-person ballots' : 'mail ballots' };
     }

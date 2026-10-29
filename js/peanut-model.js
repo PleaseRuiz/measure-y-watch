@@ -86,20 +86,31 @@
     var out = [];
     rows.forEach(function (r) {
       // A correction replaces every earlier report it undercuts, so the counts only ever grow.
-      var undercut = null, county = false;
+      var undercut = null, county = false, first = null;
       while (out.length && (r.yes < out[out.length - 1].yes || r.no < out[out.length - 1].no)) {
-        var gone = out.pop(); if (!undercut) undercut = gone;
+        var gone = out.pop(); if (!undercut) undercut = gone; first = gone;
         if (!gone.manual) county = true;
       }
       // r.g is the time that decides which group (in-person or late) a report's new votes belong to. A correction
-      // that came on its own and adds no votes overall belongs with the report it replaces, so a Wednesday fix of
-      // election-night counts stays with election night; r.t stays the time it was posted.
-      r.g = undercut && r.n <= undercut.n && alone(undercut, r, priors) ? undercut.g : r.t;
+      // that came on its own and adds almost no votes (fewer than a batch the model learns from) belongs with the
+      // report it replaces, so a Wednesday fix of election-night counts stays with election night; r.t stays the
+      // time it was posted.
+      r.g = undercut && r.n - undercut.n < (priors ? priors.noise.min_increment_votes : 1) && alone(undercut, r, priors) ? undercut.g : r.t;
       var prev = out[out.length - 1];
       if (prev && prev.yes === r.yes && prev.no === r.no) return; // a re-stamp, not new votes
       // The votes a county correction took back may belong to any earlier batch, so the batch ending here is unsure
       // by that many votes, as a share of the batch. A fixed typo in a manual entry is not.
-      r.unsure = undercut && county && prev ? (Math.max(0, undercut.yes - r.yes) + Math.max(0, undercut.no - r.no)) / (r.n - prev.n) : 0;
+      var dY = undercut ? Math.max(0, undercut.yes - r.yes) : 0, dN = undercut ? Math.max(0, undercut.no - r.no) : 0;
+      r.unsure = undercut && county && prev ? (dY + dN) / (r.n - prev.n) : 0;
+      // The forecast discounts that batch only when the removed votes can't have come in after the 8:10 PM report
+      // (in the first report it replaced, or in a kept batch): otherwise taking the batch as posted is one of the
+      // readings, while discounting it alone would keep the error in the batch where it came in.
+      r.discount = r.unsure;
+      if (r.unsure && r.n <= undercut.n) {
+        var could = first.yes - dY >= prev.yes && first.no - dN >= prev.no;
+        for (var q = 1; !could && q < out.length; q++) could = out[q].yes - out[q - 1].yes >= dY && out[q].no - out[q - 1].no >= dN;
+        if (could) r.discount = 0;
+      }
       out.push(r);
     });
     if (remapTimes && priors && priors.demo_release_times) {
@@ -111,12 +122,12 @@
     return out;
   }
 
-  // True when no scheduled post-election release falls between a report and a later correction (with two
-  // hours' slack for a late release), so the correction brought no new ballots of its own.
+  // True when no scheduled post-election release falls between a report and a later correction (with half an
+  // hour's slack for a release posted a little early), so the correction brought no new ballots of its own.
   function alone(prev, r, priors) {
     var from = priors ? toMs(priors.phases.election_night_ends) : Infinity;
     return !(priors && priors.schedule || []).some(function (s) {
-      var t = toMs(s.at); return t >= from && t > prev.t && t <= r.t + 2 * 3600e3;
+      var t = toMs(s.at); return t >= from && t > prev.t && t <= r.t + 30 * 60e3;
     });
   }
 
@@ -275,7 +286,7 @@
     // Baseline: the YES share at the end of the first batch (normally the 8:10 PM early mail). A
     // re-posted first report within 20 minutes joins it; anything later that night is in-person ballots.
     var baseIdx = 0;
-    while (baseIdx + 1 < hist.length && hist[baseIdx + 1].phase === 0 && hist[baseIdx + 1].t - hist[0].t <= BASE_MERGE_MS) baseIdx++;
+    while (baseIdx + 1 < hist.length && hist[baseIdx + 1].phase === 0 && hist[baseIdx + 1].g - hist[0].g <= BASE_MERGE_MS) baseIdx++;
     for (var b = baseIdx + 1; b < hist.length; b++) if (hist[b].phase === 0) hist[b].phase = 1;
     var base = hist[baseIdx];
     var baseShare = base.yes / base.n;
@@ -286,13 +297,14 @@
     for (var k = baseIdx + 1; k < hist.length; k++) {
       var dy = hist[k].yes - hist[k - 1].yes, dn = hist[k].n - hist[k - 1].n;
       if (dn > 0 && dy >= 0 && dy <= dn) {
-        increments.push({ yes: dy, n: dn, phase: hist[k].phase, unsure: hist[k].unsure });
-        // The take quotes these counts, so it leaves out a batch a correction made unsure by more than 2 points.
-        if (hist[k].unsure > 0.02) continue;
+        increments.push({ yes: dy, n: dn, phase: hist[k].phase, unsure: hist[k].discount });
         var grp = hist[k].phase === 2 ? observed.post : observed.night;
         grp.yes += dy; grp.n += dn;
       }
+      // The take quotes these counts, so it says nothing about a group a correction made unsure by more than 2 points.
+      if (hist[k].unsure > 0.02) (hist[k].phase === 2 ? observed.post : observed.night).unsure = true;
     }
+    ['night', 'post'].forEach(function (g) { if (observed[g].unsure) observed[g] = { yes: 0, n: 0 }; });
     var post = leanPosterior(baseShare, increments, priors);
     // What Peanut expected from late ballots once election night was in (before any late ballots).
     var lateExpected = leanPosterior(baseShare, increments.filter(function (x) { return x.phase !== 2; }), priors).mean[1];
@@ -477,7 +489,7 @@
     var hist = cleanHistory(data, priors, remap);
     hist.forEach(function (h, i) {
       steps.push(function () {
-        var last = i === hist.length - 1, key = priors.version + JSON.stringify(hist.slice(0, i + 1).map(function (x) { return [x.yes, x.no, x.t, x.g, x.unsure]; }));
+        var last = i === hist.length - 1, key = priors.version + JSON.stringify(hist.slice(0, i + 1).map(function (x) { return [x.yes, x.no, x.t, x.g, x.unsure, x.discount]; }));
         var p = last ? r.pYes : key in cache ? cache[key] : (cache[key] = forecast(data, priors, { upTo: i, remapTimes: remap }).pYes);
         points.push({ t: h.t, pYes: p });
         return last ? { type: 'points', points: points, final: r.status === 'final' } : null;

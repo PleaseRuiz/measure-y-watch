@@ -265,6 +265,53 @@ test('a correction of an error in the 8:10 PM report does not collapse the needl
   assert.strictEqual(posted.observed.night.n, 0, 'the take leaves out a batch the correction made unsure');
 });
 
+// Every way an error of (dY, dN) votes could have got in at one report and stayed until the fix (the last row),
+// as fixed-at-source histories. The posted needle should sit among their needles.
+function readings(rows, dY, dN) {
+  var out = [];
+  for (var i = 0; i < rows.length - 1; i++) {
+    var h = rows.slice(0, -1).map(function (r, j) { return j >= i ? [r[0] - dY, r[1] - dN, r[2]] : r; });
+    var ok = h.every(function (r, j) { return r[0] >= 0 && r[1] >= 0 && (!j || (r[0] >= h[j - 1][0] && r[1] >= h[j - 1][1])); });
+    if (ok) out.push(M.forecast(data(h), P).pYes);
+  }
+  return out;
+}
+function among(p, ps, tol, what) {
+  var lo = Math.min.apply(null, ps), hi = Math.max.apply(null, ps);
+  assert.ok(p > lo - tol && p < hi + tol, what + ': ' + p + ' outside ' + lo + ' to ' + hi);
+}
+var T = function (d, hm) { return '2026-11-0' + d + 'T' + hm + ':00-08:00'; };
+
+test('a lone county fix after Thursday\'s release of an error from election night lands among the readings', function () {
+  var rows = [[2727, 2673, T(3, '20:12')], [2794, 2756, T(3, '21:03')], [2950, 2850, T(3, '22:02')], [3021, 2939, T(3, '23:05')],
+    [3101, 3039, T(4, '00:04')], [3168, 3122, T(4, '01:02')], [3230, 3200, T(4, '02:05')], [3778, 3782, T(5, '16:31')], [3698, 3782, T(5, '18:00')]];
+  among(M.forecast(data(rows), P).pYes, readings(rows, 80, 0), 0.05, 'Thursday fix of +80 YES');
+});
+
+test('an election-night fix of an earlier error lands among the readings, and the take says nothing about those ballots', function () {
+  var rows = [[2727, 2673, T(3, '20:12')], [2794, 3056, T(3, '21:03')], [2870, 3150, T(3, '22:02')], [2941, 3239, T(3, '23:05')],
+    [3021, 3339, T(4, '00:04')], [3088, 3422, T(4, '01:02')], [3150, 3200, T(4, '02:05')]];
+  var r = M.forecast(data(rows), P);
+  among(r.pYes, readings(rows, 0, 300), 0.05, '2 AM fix of +300 NO');
+  assert.strictEqual(r.observed.night.n, 0);
+});
+
+test('a Wednesday-afternoon fix that adds a few votes stays election night', function () {
+  var night = [[2727, 2673, T(3, '20:12')], [2794, 2756, T(3, '21:03')], [2870, 2850, T(3, '22:02')], [2941, 2939, T(3, '23:05')],
+    [3021, 3039, T(4, '00:04')], [3088, 3122, T(4, '01:02')], [3150, 3200, T(4, '02:05')]];
+  var posted = M.forecast(data(night.concat([[3148, 3207, T(4, '16:00')]])), P);
+  var source = M.forecast(data(night.slice(0, -1).concat([[3148, 3207, T(4, '02:05')]])), P);
+  assert.strictEqual(posted.phase, 1);
+  assert.strictEqual(posted.observed.post.n, 0);
+  near(posted.pYes, source.pYes, 0.03, 'Wednesday fix vs fixed at 2 AM');
+});
+
+test('a fixed re-post of the 8:10 PM report stays early mail', function () {
+  var posted = M.forecast(data([[2727, 2673, T(3, '20:12')], [3131, 3069, T(3, '20:25')], [3091, 3069, T(3, '20:50')], [3158, 3152, T(3, '21:03')]]), P);
+  var source = M.forecast(data([[2727, 2673, T(3, '20:12')], [3091, 3069, T(3, '20:25')], [3158, 3152, T(3, '21:03')]]), P);
+  near(posted.pYes, source.pYes, 0.03, 'fixed re-post vs fixed at its source');
+});
+
 test('a removed duplicate batch does not collapse the needle', function () {
   var D = [[2509, 2629, FIRST], [2587, 2721, '2026-11-03T21:01:00-08:00'], [2671, 2802, '2026-11-03T22:01:00-08:00']];
   var posted = M.forecast(data(D.concat([[2500, 2692, '2026-11-03T23:01:00-08:00']])), P);
