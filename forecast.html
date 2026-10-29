@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Peanut's Needle · Measure Y Watch</title>
+<title>PEANUT · Measure Y Watch</title>
 <meta name="description" content="A just-for-fun forecast of Belmont's Measure Y, with the full methodology. Not official results.">
-<meta property="og:title" content="Peanut's Needle · Measure Y Watch">
-<meta property="og:description" content="A just-for-fun forecast of Belmont's Measure Y. Not official results, not affiliated with The New York Times.">
+<meta property="og:title" content="PEANUT · Measure Y Watch">
+<meta property="og:description" content="PEANUT (Peninsula Election Analysis &amp; Needle, Unofficial Tally): a just-for-fun forecast of Belmont's Measure Y. Not official results, not affiliated with The New York Times.">
 <meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1114" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,6 +78,9 @@ a{color:var(--accent)}
 @media (min-width:900px) and (min-height:880px){.needle-card{position:sticky;top:16px}}
 .needle-title{margin:0;font-size:13px;letter-spacing:.14em;font-weight:700;color:var(--muted);text-transform:uppercase}
 .needle-sub{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.needle-sub b{color:var(--ink);font-weight:800}
+.needle-sub.sample{color:var(--sample);font-weight:700}
+.needle-title.brand{font-size:15px;letter-spacing:.32em;color:var(--ink)}
 .gauge{width:100%;max-width:540px;height:auto;display:block;overflow:visible;margin-top:4px}
 .seg{fill:none;stroke-width:40}
 .g-n3{stroke:var(--n3)}.g-n2{stroke:var(--n2)}.g-n1{stroke:var(--n1)}.g-tu{stroke:var(--tu)}.g-y1{stroke:var(--y1)}.g-y2{stroke:var(--y2)}.g-y3{stroke:var(--y3)}
@@ -200,14 +203,14 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 
   <nav class="tabs" aria-label="Views">
     <a href="./">Live count</a>
-    <a href="forecast.html" aria-current="page">Forecast mode</a>
+    <a href="forecast.html" aria-current="page">PEANUT forecast</a>
   </nav>
 
   <main>
    <div class="grid">
     <section class="card needle-card" aria-labelledby="needleHeading">
-      <h2 id="needleHeading" class="needle-title mono">Peanut's needle</h2>
-      <p class="needle-sub">Unofficial · just for fun</p>
+      <h2 id="needleHeading" class="needle-title brand mono" aria-label="PEANUT: Peninsula Election Analysis and Needle, Unofficial Tally">PEANUT</h2>
+      <p class="needle-sub" id="needleSub"><b>P</b>eninsula <b>E</b>lection <b>A</b>nalysis &amp; <b>N</b>eedle, <b>U</b>nofficial <b>T</b>ally</p>
       <svg class="gauge asleep" id="gauge" viewBox="0 0 400 284" role="img" aria-labelledby="gaugeTitle">
         <title id="gaugeTitle">Needle showing the chance Measure Y passes</title>
         <g id="segs"></g>
@@ -298,8 +301,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
    </div>
 
     <section class="card method" id="method" aria-labelledby="methodHeading">
-      <h2 id="methodHeading">How Peanut's Needle works</h2>
-      <p>This is a just-for-fun forecast for people who like election-night needles. The <a href="./">Live count</a> tab shows only the county's actual numbers; this tab estimates where those numbers will end up. It's an homage to The New York Times' election needle and isn't affiliated with or endorsed by the Times. Peanut is a small doodle and the needle's mascot. Peanut's mood shows how sure the forecast is, not who's ahead, and Peanut does not do the math: the model described below does.</p>
+      <h2 id="methodHeading">How PEANUT works</h2>
+      <p>PEANUT (Peninsula Election Analysis &amp; Needle, Unofficial Tally) is a just-for-fun forecast for people who like election-night needles. The <a href="./">Live count</a> tab shows only the county's actual numbers; this tab estimates where those numbers will end up. It's an homage to The New York Times' election needle and isn't affiliated with or endorsed by the Times. It's named for Peanut, a small doodle and its mascot. Peanut's mood shows how sure the forecast is, not who's ahead, and Peanut does not do the math: the model described below does.</p>
 
       <h3>What goes in</h3>
       <p>Only what San Mateo County publishes for Measure Y at each update: the YES and NO totals and the county's "Website Updated" time. Nothing about individual voters is used or stored.</p>
@@ -388,7 +391,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   var el = {
     pill: $('pill'), pillText: $('pillText'), updated: $('updated'), gauge: $('gauge'), gaugeTitle: $('gaugeTitle'), segs: $('segs'), band: $('band'),
     pointer: $('pointer'), tilt: $('peanutTilt'), eyes: $('pnEyes'), zone: $('zone'), heroNum: $('heroNum'), heroLabel: $('heroLabel'), metaLine: $('metaLine'),
-    take: $('take'), wobbleBtn: $('wobbleBtn'), wobbleState: $('wobbleState'),
+    take: $('take'), wobbleBtn: $('wobbleBtn'), wobbleState: $('wobbleState'), needleSub: $('needleSub'),
     estHeading: $('estHeading'), estBody: $('estBody'), movedBody: $('movedBody'), assume: $('assume'), priorTable: $('priorTable')
   };
 
@@ -678,7 +681,12 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   var state = { priors: null, priorsText: null, key: null, data: null, r: null, traj: {} };
 
   function setHeader(data) {
-    if (DEMO || REHEARSAL) { el.pill.className = 'pill mono sample'; el.pillText.textContent = 'Sample data'; el.updated.textContent = 'Made-up numbers, not real results'; return; }
+    if (DEMO || REHEARSAL) {
+      el.pill.className = 'pill mono sample'; el.pillText.textContent = 'Sample data'; el.updated.textContent = 'Made-up numbers, not real results';
+      // Say so inside the needle card too, so a cropped screenshot can't pass for a real forecast.
+      el.needleSub.className = 'needle-sub sample'; el.needleSub.textContent = 'Sample data · made-up numbers, not a real forecast';
+      return;
+    }
     el.pill.className = 'pill mono fun'; el.pillText.textContent = 'Forecast · just for fun';
     var L = data && data.latest;
     el.updated.textContent = L && L.county_updated && (L.yes + L.no > 0) ? 'Based on the county update of ' + dtLong.format(new Date(L.county_updated)) : 'First results Tue, Nov 3 at 8:10 PM';
