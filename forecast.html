@@ -411,10 +411,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   var dtAxis = new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   function pct(x, digits) { return (100 * x).toFixed(digits === undefined ? 1 : digits) + '%'; }
   function chanceText(p) { if (p > 0.99) return '>99%'; if (p < 0.01) return '<1%'; return Math.round(100 * p) + '%'; }
-  function pointsText(x) {
+  function pointsText(x, base) {
     var v = Math.abs(100 * x);
-    if (v < 0.05) return 'about the same YES share as the early mail';
-    return 'about ' + v.toFixed(1) + ' points ' + (x > 0 ? 'more' : 'less') + ' YES than the early mail';
+    base = base || 'the early mail';
+    if (v < 0.05) return 'about the same YES share as ' + base;
+    return 'about ' + v.toFixed(1) + ' points ' + (x > 0 ? 'more' : 'less') + ' YES than ' + base;
   }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
@@ -693,9 +694,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   function renderAssumptions(r, priors) {
     var L = priors.leans, items = [];
     if (r && r.status !== 'final') {
+      var base = r.baseMixed ? 'the first update' : 'the early mail';
       items.push('<li><b>Baseline:</b> the ' + (r.baseMixed ? 'first update we have' : '8:10 PM early mail') + ' was ' + pct(r.baseShare) + ' YES.</li>');
-      if (r.phase <= 1) items.push('<li><b>In-person ballots still to count:</b> ' + pointsText(r.leans.electionNight.mean) + ' (give or take ' + (100 * r.leans.electionNight.sd).toFixed(1) + ').</li>');
-      items.push('<li><b>Late ballots still to count:</b> ' + pointsText(r.leans.postElection.mean) + ' (give or take ' + (100 * r.leans.postElection.sd).toFixed(1) + ').</li>');
+      if (r.phase <= 1) items.push('<li><b>In-person ballots still to count:</b> ' + pointsText(r.leans.electionNight.mean, base) + ' (give or take ' + (100 * r.leans.electionNight.sd).toFixed(1) + ').</li>');
+      items.push('<li><b>Late ballots still to count:</b> ' + pointsText(r.leans.postElection.mean, base) + ' (give or take ' + (100 * r.leans.postElection.sd).toFixed(1) + ').</li>');
       items.push('<li><b>Total votes on Y:</b> about ' + approx(r.totalVotes[0.5]) + ' (likely ' + approx(r.totalVotes[0.1]) + '–' + approx(r.totalVotes[0.9]) + '), so about ' + Math.round(100 * r.countedFraction) + '% is counted.</li>');
     } else if (r) {
       items.push('<li>The count is certified, so there is nothing left to assume.</li>');
