@@ -1,0 +1,136 @@
+name: Update results
+
+on:
+  schedule:
+    # Times are UTC. Pacific is UTC-8 after daylight saving ends on Nov 1.
+    # Election night, Tue Nov 3 7:57 PM to Wed Nov 4 2:57 AM Pacific: every 5 minutes.
+    - cron: "57 3 4 11 *"
+    - cron: "2-57/5 4-10 4 11 *"
+    # Thu Nov 5 to Mon Nov 16, 8:04 AM to 5:54 PM Pacific: every 10 minutes.
+    - cron: "4-54/10 16-23 5-16 11 *"
+    - cron: "4-54/10 0-1 6-17 11 *"
+  workflow_dispatch:
+    inputs:
+      yes:
+        description: "Manual entry: YES total. Leave all three blank to read the county page."
+        required: false
+        type: string
+      no:
+        description: "Manual entry: NO total"
+        required: false
+        type: string
+      county_updated:
+        description: "Manual entry: the county's Website Updated time, e.g. 11/3/2026 8:10:45 PM (blank = now)"
+        required: false
+        type: string
+      allow_decrease:
+        description: "Accept YES or NO going down, for this run only (a county correction or fixing a typo)"
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - config.json
+      - data/**
+      - .github/workflows/update.yml
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+env:
+  PAGE_URL: https://pleaseruiz.github.io/measure-y-watch
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      deploy: ${{ steps.live.outputs.behind == 'true' || github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore last county fetch time
+        if: github.event_name != 'push'
+        uses: actions/cache/restore@v4
+        with:
+          path: .last-fetch
+          key: last-fetch-${{ github.run_id }}
+          restore-keys: last-fetch-
+
+      - name: Read results
+        id: read
+        env:
+          EVENT: ${{ github.event_name }}
+          MANUAL_YES: ${{ inputs.yes }}
+          MANUAL_NO: ${{ inputs.no }}
+          MANUAL_COUNTY_UPDATED: ${{ inputs.county_updated }}
+          ALLOW_DECREASE: ${{ inputs.allow_decrease }}
+        run: python scraper/update.py
+
+      - name: Save last county fetch time
+        if: always() && github.event_name != 'push' && hashFiles('.last-fetch') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .last-fetch
+          key: last-fetch-${{ github.run_id }}
+
+      - name: Commit results.json
+        if: steps.read.outputs.changed == 'true'
+        env:
+          MESSAGE: ${{ steps.read.outputs.message }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/results.json
+          git commit -q -m "$MESSAGE"
+          git push -q || { git pull -q --rebase origin main && git push -q; }
+          echo "Committed"
+
+      - name: Check whether the live page is behind
+        id: live
+        if: github.event_name != 'push'
+        run: |
+          if curl -fsL --max-time 20 "$PAGE_URL/data/results.json?t=$(date +%s%N)" -o live.json && cmp -s live.json data/results.json; then
+            echo "Live page is up to date"
+          else
+            echo "Live page is behind; deploying"
+            echo "behind=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build site
+        if: steps.live.outputs.behind == 'true' || github.event_name == 'push'
+        run: |
+          mkdir _site
+          cp index.html _site/
+          cp -r data _site/
+
+      - name: Upload site
+        if: steps.live.outputs.behind == 'true' || github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: update
+    if: needs.update.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

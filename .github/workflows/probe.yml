@@ -1,0 +1,29 @@
+name: Probe county source
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/vigilant-einstein-xiu550]
+    paths:
+      - .github/workflows/probe.yml
+      - scraper/county.py
+      - scraper/probe.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch county page and print Measure Y
+        run: python scraper/probe.py
