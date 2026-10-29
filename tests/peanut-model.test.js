@@ -190,3 +190,26 @@ test('each chart point is exactly what the needle showed after that report', fun
   var fin = M.trajectory(data(rows, { status: 'final' }), P);
   assert.strictEqual(fin[fin.length - 1].pYes, 1);
 });
+
+test('a late-mail update on Thursday morning counts as late ballots', function () {
+  assert.strictEqual(M.phaseOf(Date.parse('2026-11-05T11:30:00-08:00'), P), 2);
+  assert.strictEqual(M.phaseOf(Date.parse('2026-11-04T16:30:00-08:00'), P), 2);
+  assert.strictEqual(M.phaseOf(Date.parse('2026-11-04T08:00:00-08:00'), P), 1);
+});
+
+test('the counts behind each later group add up', function () {
+  var r = M.forecast(data([[3300, 3100, FIRST], [3480, 3290, NIGHT], [4100, 3880, THU]]), P);
+  assert.deepStrictEqual(r.observed, { night: { yes: 180, n: 370 }, post: { yes: 620, n: 1210 } });
+});
+
+test('the wobble band sits around the needle', function () {
+  [
+    [[3300, 3100, FIRST]],
+    [[3300, 3100, FIRST], [3750, 3620, NIGHT]],
+    [[3300, 3100, FIRST], [3750, 3620, NIGHT], [4400, 4250, THU]],
+    [[3220, 3180, FIRST], [3600, 3610, NIGHT], [4250, 4240, THU], [4900, 4880, MON]]
+  ].forEach(function (rows) {
+    var d = data(rows), p = M.forecast(d, P).pYes, w = M.wobble(d, P);
+    assert.ok(w.lo <= p + 0.005 && p - 0.005 <= w.hi, 'needle ' + p + ' outside ' + JSON.stringify(w));
+  });
+});

@@ -43,6 +43,15 @@ place in line), start it again.
 `"paused": false` to `"paused": true`. Within a couple of minutes the tab says Peanut is taking a
 break, even on pages already open. Change it back to turn it on. The Live count tab isn't affected.
 
+**Mid-count rules for the forecast tab** (from the 8:10 PM report until the county certifies):
+- Change `data/peanut-priors.json` only to fix a real error, and list every number change at the
+  end of the forecast page's methodology ("Changes to the assumptions after the first report").
+  An edit that only changes wording keeps `"version"` as it is, so no number moves.
+- Pause only for broken data or a model bug (for example a county correction), never because of an
+  unwelcome number.
+- After pushing a change to that file, check that the run it started turned green. If it says
+  Cancelled, start Update results by hand: a hand-started run always republishes.
+
 A run fails (red, and GitHub emails you) when the contest title changes, a number isn't a
 whole number, YES or NO goes down, a manual time isn't newer than the saved one, or the
 county page can't be read. Nothing is saved when a run fails.

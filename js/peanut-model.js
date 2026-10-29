@@ -262,10 +262,14 @@
     var baseMixed = lateFirst || hist[0].phase !== 0;
     var nowPhase = last.phase;
 
-    var increments = [];
+    var increments = [], observed = { night: { yes: 0, n: 0 }, post: { yes: 0, n: 0 } };
     for (var k = baseIdx + 1; k < hist.length; k++) {
       var dy = hist[k].yes - hist[k - 1].yes, dn = hist[k].n - hist[k - 1].n;
-      if (dn > 0 && dy >= 0 && dy <= dn) increments.push({ yes: dy, n: dn, phase: hist[k].phase });
+      if (dn > 0 && dy >= 0 && dy <= dn) {
+        increments.push({ yes: dy, n: dn, phase: hist[k].phase });
+        var grp = hist[k].phase === 2 ? observed.post : observed.night;
+        grp.yes += dy; grp.n += dn;
+      }
     }
     var post = leanPosterior(baseShare, increments, priors);
 
@@ -332,6 +336,8 @@
       totalVotes: totQ,
       countedFraction: last.n / totQ[0.5],
       baseShare: baseShare,
+      // Votes counted so far in each later group (in-person on election night, late ballots after).
+      observed: observed,
       // Each lean's typical spread, on the same scale as the priors file (the fat tails come on top).
       leans: {
         electionNight: { mean: post.mean[0], sd: Math.sqrt(post.cov[0][0]) },
@@ -384,10 +390,18 @@
     return sets;
   }
 
-  function wobbleBand(ps) {
+  // shift (optional): the needle minus the chance under the shipped assumptions on the wobble's short
+  // random stream. All redraws share that stream, so they share its sampling error; subtracting it puts
+  // the band where much longer runs would put it, around the needle.
+  function wobbleBand(ps, shift) {
     ps = ps.slice().sort(function (a, b) { return a - b; });
     function q(p) { var i = p * (ps.length - 1), lo = Math.floor(i), hi = Math.ceil(i); return ps[lo] + (ps[hi] - ps[lo]) * (i - lo); }
-    return { lo: q(0.25), hi: q(0.75) };
+    var s = shift || 0;
+    return { lo: clamp(q(0.25) + s, 0, 1), hi: clamp(q(0.75) + s, 0, 1) };
+  }
+
+  function wobbleShift(data, priors, needle, remap) {
+    return needle - forecast(data, priors, { sims: WOBBLE_SIMS, remapTimes: remap }).pYes;
   }
 
 
@@ -397,7 +411,8 @@
     var ps = wobbleSets(priors, opts).map(function (p2) {
       return forecast(data, p2, { sims: opts.sims || WOBBLE_SIMS, remapTimes: opts.remapTimes }).pYes;
     });
-    return wobbleBand(ps);
+    var shift = opts.sims ? 0 : wobbleShift(data, priors, forecast(data, priors, { remapTimes: opts.remapTimes }).pYes, opts.remapTimes);
+    return wobbleBand(ps, shift);
   }
 
   // The forecast after each report, for the "how the needle moved" chart. With the default number
@@ -416,15 +431,16 @@
   // cache keeps chart points between calls: a point never changes once its report is in.
   function plan(data, priors, opts, cache) {
     opts = opts || {}; cache = cache || {};
-    var remap = opts.remapTimes, r = null, steps = [], sets = null, ps = [], points = [];
+    var remap = opts.remapTimes, r = null, steps = [], sets = null, ps = [], points = [], shift = null;
     steps.push(function () { r = forecast(data, priors, { remapTimes: remap }); return { type: 'needle', r: r }; });
     for (var j = 0; j < WOBBLE_SETS; j += 8) steps.push(wobbleStep(j));
     function wobbleStep(from) {
       return function () {
         if (r.status !== 'live') return null;
         sets = sets || wobbleSets(priors);
+        if (shift === null) shift = wobbleShift(data, priors, r.pYes, remap);
         sets.slice(from, from + 8).forEach(function (p2) { ps.push(forecast(data, p2, { sims: WOBBLE_SIMS, remapTimes: remap }).pYes); });
-        return ps.length === sets.length ? { type: 'band', band: wobbleBand(ps) } : null;
+        return ps.length === sets.length ? { type: 'band', band: wobbleBand(ps, shift) } : null;
       };
     }
     var hist = cleanHistory(data, priors, remap);
@@ -442,7 +458,7 @@
 
   return {
     forecast: forecast, trajectory: trajectory, wobble: wobble, wobbleSets: wobbleSets, wobbleBand: wobbleBand,
-    plan: plan, cleanHistory: cleanHistory, phaseOf: phaseOf, scheduleAt: scheduleAt,
+    wobbleShift: wobbleShift, plan: plan, cleanHistory: cleanHistory, phaseOf: phaseOf, scheduleAt: scheduleAt,
     leanPosterior: leanPosterior, makeRng: makeRng, hashString: hashString, normInv: normInv
   };
 });
