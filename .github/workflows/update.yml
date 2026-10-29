@@ -3,9 +3,9 @@ name: Update results
 on:
   schedule:
     # Times are UTC. Pacific is UTC-8 after daylight saving ends on Nov 1.
-    # Election night, Tue Nov 3 7:57 PM to Wed Nov 4 2:57 AM Pacific: every 5 minutes.
+    # Election night, Tue Nov 3 7:57 PM to Wed Nov 4 4:57 AM Pacific: every 5 minutes.
     - cron: "57 3 4 11 *"
-    - cron: "2-57/5 4-10 4 11 *"
+    - cron: "2-57/5 4-12 4 11 *"
     # Thu Nov 5 to Mon Nov 16, 8:04 AM to 5:54 PM Pacific: every 10 minutes.
     - cron: "4-54/10 16-23 5-16 11 *"
     - cron: "4-54/10 0-1 6-17 11 *"
@@ -20,7 +20,7 @@ on:
         required: false
         type: string
       county_updated:
-        description: "Manual entry: the county's Website Updated time, e.g. 11/3/2026 8:10:45 PM (blank = now)"
+        description: "Manual entry: the county page's Website Updated time, e.g. 11/3/2026 8:10:45 PM (required)"
         required: false
         type: string
       allow_decrease:
@@ -28,10 +28,17 @@ on:
         required: false
         type: boolean
         default: false
+      certified:
+        description: "The county has certified the count (Dec 3 or later): mark the results final"
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - index.html
+      - forecast.html
+      - js/**
       - config.json
       - data/**
       - .github/workflows/update.yml
@@ -74,6 +81,7 @@ jobs:
           MANUAL_NO: ${{ inputs.no }}
           MANUAL_COUNTY_UPDATED: ${{ inputs.county_updated }}
           ALLOW_DECREASE: ${{ inputs.allow_decrease }}
+          MARK_CERTIFIED: ${{ inputs.certified }}
         run: python scraper/update.py
 
       - name: Save last county fetch time
@@ -99,7 +107,11 @@ jobs:
         id: live
         if: github.event_name != 'push'
         run: |
-          if curl -fsL --max-time 20 "$PAGE_URL/data/results.json?t=$(date +%s%N)" -o live.json && cmp -s live.json data/results.json; then
+          # A hand-started run always republishes, so it can also repair a failed deploy.
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Hand-started run; deploying"
+            echo "behind=true" >> "$GITHUB_OUTPUT"
+          elif curl -fsL --max-time 20 "$PAGE_URL/data/results.json?t=$(date +%s%N)" -o live.json && cmp -s live.json data/results.json; then
             echo "Live page is up to date"
           else
             echo "Live page is behind; deploying"
@@ -112,6 +124,8 @@ jobs:
           mkdir _site
           cp index.html _site/
           cp -r data _site/
+          # The forecast tab is optional: the live count still publishes if it's removed.
+          for f in forecast.html js; do if [ -e "$f" ]; then cp -r "$f" _site/; fi; done
 
       - name: Upload site
         if: steps.live.outputs.behind == 'true' || github.event_name == 'push'

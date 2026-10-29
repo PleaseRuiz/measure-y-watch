@@ -3,6 +3,29 @@ name: Rehearsal
 
 on:
   workflow_dispatch:
+    inputs:
+      practice:
+        description: "Practice a manual entry (writes rehearsal.json only). Leave unticked to replay the five fake updates."
+        required: false
+        type: boolean
+        default: false
+      yes:
+        description: "Practice entry: YES total"
+        required: false
+        type: string
+      no:
+        description: "Practice entry: NO total"
+        required: false
+        type: string
+      county_updated:
+        description: "Practice entry: a Website Updated time a few minutes ago, e.g. 10/30/2026 7:45:00 PM (required)"
+        required: false
+        type: string
+      allow_decrease:
+        description: "Accept YES or NO going down, for this run only"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: update
@@ -14,6 +37,7 @@ env:
 jobs:
   step:
     name: Rehearsal update ${{ matrix.n }}
+    if: ${{ !inputs.practice }}
     strategy:
       max-parallel: 1
       fail-fast: false
@@ -58,6 +82,8 @@ jobs:
           mkdir _site
           cp index.html _site/
           cp -r data _site/
+          # The forecast tab is optional: the live count still publishes if it's removed.
+          for f in forecast.html js; do if [ -e "$f" ]; then cp -r "$f" _site/; fi; done
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
@@ -69,6 +95,70 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           artifact_name: rehearsal-${{ matrix.n }}
+
+      - name: Time until the live page shows it
+        env:
+          PUSHED_AT: ${{ steps.commit.outputs.pushed_at }}
+        run: python scraper/rehearsal.py verify
+
+  practice:
+    name: Practice manual entry
+    if: ${{ inputs.practice }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Read practice entry
+        env:
+          PRACTICE: "1"
+          EVENT: workflow_dispatch
+          MANUAL_YES: ${{ inputs.yes }}
+          MANUAL_NO: ${{ inputs.no }}
+          MANUAL_COUNTY_UPDATED: ${{ inputs.county_updated }}
+          ALLOW_DECREASE: ${{ inputs.allow_decrease }}
+        run: python scraper/update.py
+
+      - name: Commit rehearsal.json
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/rehearsal.json
+          git diff --cached --quiet || git commit -q -m "Rehearsal practice entry (made-up numbers)"
+          git push -q || { git pull -q --rebase origin main && git push -q; }
+          echo "pushed_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Build site
+        run: |
+          mkdir _site
+          cp index.html _site/
+          cp -r data _site/
+          # The forecast tab is optional: the live count still publishes if it's removed.
+          for f in forecast.html js; do if [ -e "$f" ]; then cp -r "$f" _site/; fi; done
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+          name: rehearsal-practice
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: rehearsal-practice
 
       - name: Time until the live page shows it
         env:

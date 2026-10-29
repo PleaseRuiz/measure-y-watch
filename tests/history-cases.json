@@ -1,0 +1,438 @@
+[
+ {
+  "measure": "Mar 2020: City council recall",
+  "kind": "governance or land use",
+  "threshold": 0.5,
+  "final": [
+   7393,
+   2173
+  ],
+  "reports": [
+   [
+    3603,
+    1043,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: Proposition 13",
+  "kind": "property tax or school bond",
+  "threshold": 0.5,
+  "final": [
+   120224,
+   94788
+  ],
+  "reports": [
+   [
+    49366,
+    47722,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: La Honda-Pescadero Unified School District, Measure M",
+  "kind": "property tax or school bond",
+  "threshold": 0.6667,
+  "final": [
+   967,
+   369
+  ],
+  "reports": [
+   [
+    360,
+    192,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: Jefferson Union High School District, Measure J",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   21062,
+   12327
+  ],
+  "reports": [
+   [
+    9343,
+    6402,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: San Mateo Union High School District, Measure L",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   41467,
+   30708
+  ],
+  "reports": [
+   [
+    17090,
+    16100,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: Brisbane School District, Measure K",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   1739,
+   956
+  ],
+  "reports": [
+   [
+    648,
+    546,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: Burlingame Elementary School District, Measure O",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   6485,
+   4292
+  ],
+  "reports": [
+   [
+    2775,
+    2218,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: Portola Valley School District, Measure P",
+  "kind": "property tax or school bond",
+  "threshold": 0.6667,
+  "final": [
+   2279,
+   1257
+  ],
+  "reports": [
+   [
+    937,
+    557,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Mar 2020: San Carlos School District, Measure N",
+  "kind": "property tax or school bond",
+  "threshold": 0.6667,
+  "final": [
+   9072,
+   3490
+  ],
+  "reports": [
+   [
+    3747,
+    1804,
+    "2026-11-03T20:12:00-08:00"
+   ]
+  ],
+  "source": "summary_2.xml first EN report (20:56) vs summary_3.xml final"
+ },
+ {
+  "measure": "Nov 2022: City of Belmont, Measure K",
+  "kind": "business or hotel tax",
+  "threshold": 0.5,
+  "final": [
+   8352,
+   2180
+  ],
+  "reports": [
+   [
+    2773,
+    618,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    3205,
+    853,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: City of Millbrae, Measure N",
+  "kind": "business or hotel tax",
+  "threshold": 0.5,
+  "final": [
+   5987,
+   1609
+  ],
+  "reports": [
+   [
+    2302,
+    524,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    2660,
+    710,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: City of Burlingame, Measure X",
+  "kind": "business or hotel tax",
+  "threshold": 0.5,
+  "final": [
+   8467,
+   2816
+  ],
+  "reports": [
+   [
+    3118,
+    877,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    3620,
+    1180,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: City of South San Francisco, Measure AA",
+  "kind": "governance or land use",
+  "threshold": 0.5,
+  "final": [
+   10239,
+   7160
+  ],
+  "reports": [
+   [
+    3655,
+    2629,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    4371,
+    3231,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: City of South San Francisco, Measure DD",
+  "kind": "other tax",
+  "threshold": 0.5,
+  "final": [
+   8247,
+   9212
+  ],
+  "reports": [
+   [
+    2792,
+    3548,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    3338,
+    4316,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: Redwood City School District, Measure S",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   17895,
+   11721
+  ],
+  "reports": [
+   [
+    6118,
+    4608,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    7136,
+    5403,
+    "2026-11-03T23:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: South San Francisco Unified School District, Measure T",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   13633,
+   7802
+  ],
+  "reports": [
+   [
+    4867,
+    3107,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    5762,
+    3754,
+    "2026-11-03T23:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: Sequoia Union High School District, Measure W",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   53317,
+   31340
+  ],
+  "reports": [
+   [
+    19044,
+    11816,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    22295,
+    14254,
+    "2026-11-03T23:05:00-08:00"
+   ]
+  ],
+  "source": "EN figure from news via cd_pairs.py; first report reconstructed as EN minus final vote-center votes (cd_decomp assumption A)"
+ },
+ {
+  "measure": "Nov 2022: City of Menlo Park, Measure V",
+  "kind": "governance or land use",
+  "threshold": 0.5,
+  "final": [
+   4852,
+   7860
+  ],
+  "reports": [
+   [
+    2775,
+    4120,
+    "2026-11-05T16:28:00-08:00"
+   ]
+  ],
+  "source": "Thursday 4 p.m. update (Almanac) via cd_pairs.py"
+ },
+ {
+  "measure": "Nov 2024: City of Menlo Park, Measure CC",
+  "kind": "business or hotel tax",
+  "threshold": 0.5,
+  "final": [
+   13009,
+   2562
+  ],
+  "reports": [
+   [
+    8132,
+    1583,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "final EN report (Almanac) via cd_pairs.py"
+ },
+ {
+  "measure": "Mar 2024: San Carlos School District, Measure H",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   6283,
+   3655
+  ],
+  "reports": [
+   [
+    3012,
+    2058,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "preliminary EN (Peninsula 360 Press) via cd_pairs.py"
+ },
+ {
+  "measure": "Mar 2024: Jefferson Elementary School District, Measure C",
+  "kind": "property tax or school bond",
+  "threshold": 0.6667,
+  "final": [
+   8543,
+   3691
+  ],
+  "reports": [
+   [
+    4855,
+    2179,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "preliminary EN via cd_pairs.py"
+ },
+ {
+  "measure": "Mar 2024: Pacifica School District, Measure G",
+  "kind": "property tax or school bond",
+  "threshold": 0.55,
+  "final": [
+   7067,
+   4481
+  ],
+  "reports": [
+   [
+    3496,
+    2608,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "preliminary EN via cd_pairs.py"
+ },
+ {
+  "measure": "Jun 2026: Redwood City Elementary School District, Measure C",
+  "kind": "property tax or school bond",
+  "threshold": 0.6667,
+  "final": [
+   15695,
+   8336
+  ],
+  "reports": [
+   [
+    4262,
+    3150,
+    "2026-11-03T20:12:00-08:00"
+   ],
+   [
+    5107,
+    3698,
+    "2026-11-04T01:05:00-08:00"
+   ]
+  ],
+  "source": "Tue-night and Wed-morning figures (SMDJ, Daily Post) via cd_pairs.py"
+ }
+]

@@ -5,14 +5,18 @@ exits non-zero, so the run goes red and GitHub sends an email.
 
 Modes, picked from the environment:
   EVENT=push                      no fetch; only copies expected_votes from config.json
-  MANUAL_YES / MANUAL_NO set      manual entry (MANUAL_COUNTY_UPDATED optional)
+  MANUAL_YES / MANUAL_NO set      manual entry (MANUAL_COUNTY_UPDATED required)
   otherwise                       one fetch of the county page
 ALLOW_DECREASE=true (only set by a hand-started run) lets this run's reading go below the saved YES or NO.
+PRACTICE=1 (rehearsal only) writes data/rehearsal.json instead and never fetches the county page.
+MARK_CERTIFIED=true (hand-started run) marks the count final once the county has certified it.
+It is refused before CERTIFY_AFTER, so a mis-tap on election night can't end the count early.
 """
 
 import http.client
 import json
 import os
+import re
 import sys
 import urllib.error
 from datetime import datetime, timedelta
@@ -21,9 +25,14 @@ from pathlib import Path
 import county
 
 ROOT = Path(__file__).resolve().parent.parent
-RESULTS = ROOT / "data" / "results.json"
+PRACTICE = os.environ.get("PRACTICE") == "1"
+RESULTS = ROOT / "data" / ("rehearsal.json" if PRACTICE else "results.json")
 CONFIG = ROOT / "config.json"
 LAST_FETCH = ROOT / ".last-fetch"  # restored from the Actions cache between runs
+
+# The county certifies on Dec 3. Nothing can be marked certified before the last scheduled
+# update (Nov 16) is over.
+CERTIFY_AFTER = datetime(2026, 11, 17, tzinfo=county.PACIFIC)
 
 # Skip a fetch if the last one was this recent. Scheduled runs are 5 minutes apart
 # but GitHub starts them a little early or late, so a strict 300 would skip on-time runs.
@@ -55,13 +64,20 @@ def read_expected_votes():
 
 
 def parse_time(text):
-    """County format ("11/3/2026 8:10:45 PM", seconds optional) or ISO 8601. Pacific if no offset."""
+    """County format ("11/3/2026 8:10:45 PM", seconds optional) or ISO 8601. Pacific if no offset.
+
+    Text around a county-format time is ignored, so "Website Updated: 11/3/2026 8:10:45 PM"
+    pasted from the county page works too.
+    """
     text = " ".join(text.split()).upper()
-    for fmt in ("%m/%d/%Y %I:%M:%S %p", "%m/%d/%Y %I:%M %p"):
-        try:
-            return datetime.strptime(text, fmt).replace(tzinfo=county.PACIFIC)
-        except ValueError:
-            pass
+    found = re.search(r"\d{1,2}/\d{1,2}/\d{4} \d{1,2}:\d{2}(:\d{2})? ?[AP]M", text)
+    if found:
+        stamp = found.group(0).replace("AM", " AM").replace("PM", " PM").replace("  ", " ")
+        for fmt in ("%m/%d/%Y %I:%M:%S %p", "%m/%d/%Y %I:%M %p"):
+            try:
+                return datetime.strptime(stamp, fmt).replace(tzinfo=county.PACIFIC)
+            except ValueError:
+                pass
     try:
         dt = datetime.fromisoformat(text)
     except ValueError:
@@ -77,11 +93,15 @@ def manual_reading(now):
         return None
     if not (yes and no):
         raise CheckFailed("manual entry needs both yes and no")
+    if not updated:
+        # A made-up time could hide the county's next update, so copy the county's own.
+        raise CheckFailed("manual entry needs county_updated: the county page's Website Updated time "
+                          "(example: 11/3/2026 8:10:45 PM)")
     try:
         yes, no = county.whole_number(yes, "yes"), county.whole_number(no, "no")
     except county.ParseError as e:
         raise CheckFailed(str(e))
-    updated = parse_time(updated) if updated else now
+    updated = parse_time(updated)
     if updated > now + timedelta(minutes=5):
         raise CheckFailed(f"county_updated {updated.isoformat()} is in the future")
     return {"yes": yes, "no": no, "county_updated": updated.isoformat(),
@@ -155,13 +175,16 @@ def main():
     now = datetime.now(county.PACIFIC).replace(microsecond=0)
     event = os.environ.get("EVENT", "")
     try:
-        results = load_json(RESULTS, "data/results.json")
+        results = load_json(RESULTS, f"data/{RESULTS.name}")
         before = json.dumps(results)
+        was_final = results.get("status") == "final"
         expected_votes = read_expected_votes()
 
         reading = None
         if event != "push":
             reading = manual_reading(now)
+            if reading is None and PRACTICE:
+                raise CheckFailed("practice runs need YES and NO numbers")
             if reading is None:
                 try:
                     reading = county_reading(now)
@@ -179,24 +202,39 @@ def main():
             added = apply_reading(results, reading, now, os.environ.get("ALLOW_DECREASE") == "true")
 
         results["expected_votes"] = expected_votes
+
+        if os.environ.get("MARK_CERTIFIED") == "true":
+            latest = results.get("latest") or {}
+            if now < CERTIFY_AFTER:
+                raise CheckFailed(f"can't mark the count certified before {CERTIFY_AFTER:%b} {CERTIFY_AFTER.day}; "
+                                  "the county certifies on Dec 3")
+            if (latest.get("yes") or 0) + (latest.get("no") or 0) == 0:
+                raise CheckFailed("can't mark the count certified before any votes are counted")
+            results["status"] = "final"
+            print("Marked the count as certified")
     except CheckFailed as e:
         print(f"Check failed: {e}")
         print("Nothing written.")
         return 1
 
     if json.dumps(results) == before:
-        print("results.json unchanged")
+        print(f"{RESULTS.name} unchanged")
         write_outputs(changed="false")
         return 0
 
     tmp = RESULTS.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(results, indent=2) + "\n")
     os.replace(tmp, RESULTS)
+    certified_now = results.get("status") == "final" and not was_final
     if added:
         message = f"Update results: {reading['source']} reading, county update {reading['county_updated']}"
+        if certified_now:
+            message += ", marked certified"
+    elif certified_now:
+        message = "Mark the count as certified"
     else:
         message = "Update expected_votes from config.json"
-    print(f"Saved results.json ({message})")
+    print(f"Saved {RESULTS.name} ({message})")
     write_outputs(changed="true", message=message)
     return 0
 
