@@ -7,10 +7,19 @@
   "latest": {
     "yes": 0,
     "no": 0,
-    "county_updated": null,
+    "county_updated": "2026-10-26T11:48:45-07:00",
     "county_ballots_counted": 0,
-    "fetched_at": null,
-    "source": "placeholder"
+    "fetched_at": "2026-10-28T22:00:21-07:00",
+    "source": "county"
   },
-  "history": []
+  "history": [
+    {
+      "yes": 0,
+      "no": 0,
+      "county_updated": "2026-10-26T11:48:45-07:00",
+      "county_ballots_counted": 0,
+      "fetched_at": "2026-10-28T22:00:21-07:00",
+      "source": "county"
+    }
+  ]
 }
