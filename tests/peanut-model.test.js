@@ -6,7 +6,7 @@ var M = require('../js/peanut-model.js');
 var P = require('../data/peanut-priors.json');
 
 function data(rows, extra) {
-  var d = { threshold: 0.5, history: rows.map(function (r) { return { yes: r[0], no: r[1], county_updated: r[2] }; }) };
+  var d = { threshold: 0.5, history: rows.map(function (r) { return { yes: r[0], no: r[1], county_updated: r[2], source: r[3] || 'county' }; }) };
   return Object.assign(d, extra || {});
 }
 var FIRST = '2026-11-03T20:12:00-08:00', NIGHT = '2026-11-03T23:05:00-08:00', THU = '2026-11-05T16:28:00-08:00',
@@ -221,6 +221,111 @@ test('the wobble band moves by the needle minus the short-run chance', function 
   var raw = M.wobble(d, P, { sims: 800 }), w = M.wobble(d, P);
   assert.ok(Math.abs(shift) > 0.002, 'pick a count with a visible short-run error, got ' + shift);
   assert.ok(Math.abs(w.lo - (raw.lo + shift)) < 1e-12 && Math.abs(w.hi - (raw.hi + shift)) < 1e-12);
+});
+
+// County corrections and fixed typos (saved with Allow decrease). A fixed typo in a manual entry should land where
+// the right numbers would have. A county correction may fix an error from any earlier report, so the needle should
+// stay close to the readings for wherever the error might have been, and never collapse.
+var WED = '2026-11-04T16:30:00-08:00';
+function near(a, b, tol, what) { assert.ok(Math.abs(a - b) < tol, what + ': ' + a + ' vs ' + b); }
+
+test('a fixed typo in a manual entry barely moves the needle', function () {
+  var first = [3300, 3100, FIRST], fixed = [3600, 3400, '2026-11-03T22:01:00-08:00'];
+  var typo = M.forecast(data([first, [3840, 3290, '2026-11-03T21:01:00-08:00', 'manual'], fixed]), P);
+  var right = M.forecast(data([first, [3480, 3290, '2026-11-03T21:01:00-08:00'], fixed]), P);
+  near(typo.pYes, right.pYes, 0.03, 'typo vs no typo');
+  assert.strictEqual(typo.observed.night.n, 600);
+});
+
+test('a swap fixed on its own after Thursday\'s update counts with that update', function () {
+  var rows = [[2897, 2544, FIRST], [2951, 2614, '2026-11-03T21:01:00-08:00'], [3015, 2682, '2026-11-03T22:01:00-08:00'],
+    [3054, 2727, '2026-11-03T23:01:00-08:00'], [3103, 2764, '2026-11-04T00:01:00-08:00'], [3140, 2806, '2026-11-04T01:01:00-08:00'],
+    [3232, 2856, '2026-11-04T02:01:00-08:00']];
+  var posted = M.forecast(data(rows.concat([[3722, 3140, '2026-11-05T16:31:00-08:00'], [3667, 3195, '2026-11-05T17:31:00-08:00']])), P);
+  var source = M.forecast(data(rows.concat([[3667, 3195, '2026-11-05T16:31:00-08:00']])), P);
+  near(posted.pYes, source.pYes, 0.03, 'fix posted alone vs fixed at its source');
+});
+
+test('a Wednesday fix of election-night counts stays election night', function () {
+  var posted = M.forecast(data([[2821, 2603, FIRST], [3168, 3206, NIGHT], [3108, 3266, WED]]), P);
+  assert.strictEqual(posted.phase, 1);
+  assert.strictEqual(posted.observed.post.n, 0, 'no late ballots have been counted');
+  // The 60 votes moved from YES to NO were wrong either in the 8:10 PM report or in the night's updates.
+  var inBase = M.forecast(data([[2761, 2663, FIRST], [3108, 3266, NIGHT]]), P).pYes;
+  var inNight = M.forecast(data([[2821, 2603, FIRST], [3108, 3266, NIGHT]]), P).pYes;
+  assert.ok(posted.pYes > Math.min(inBase, inNight) - 0.1 && posted.pYes < Math.max(inBase, inNight) + 0.1,
+    posted.pYes + ' outside ' + inNight + ' to ' + inBase);
+});
+
+test('a correction of an error in the 8:10 PM report does not collapse the needle', function () {
+  var posted = M.forecast(data([[3255, 2634, FIRST], [3357, 2712, '2026-11-03T21:01:00-08:00'], [3494, 2825, '2026-11-03T22:01:00-08:00'],
+    [3271, 3048, '2026-11-03T23:01:00-08:00']]), P);
+  var source = M.forecast(data([[3032, 2857, FIRST], [3134, 2935, '2026-11-03T21:01:00-08:00'], [3271, 3048, '2026-11-03T22:01:00-08:00']]), P);
+  near(posted.pYes, source.pYes, 0.1, 'error fixed in the 8:10 PM report');
+  assert.strictEqual(posted.observed.night.n, 0, 'the take leaves out a batch the correction made unsure');
+});
+
+test('a removed duplicate batch does not collapse the needle', function () {
+  var D = [[2509, 2629, FIRST], [2587, 2721, '2026-11-03T21:01:00-08:00'], [2671, 2802, '2026-11-03T22:01:00-08:00']];
+  var posted = M.forecast(data(D.concat([[2500, 2692, '2026-11-03T23:01:00-08:00']])), P);
+  var source = M.forecast(data([[2297, 2450, FIRST], [2375, 2542, '2026-11-03T21:01:00-08:00'], [2459, 2623, '2026-11-03T22:01:00-08:00'],
+    [2500, 2692, '2026-11-03T23:01:00-08:00']]), P);
+  near(posted.pYes, source.pYes, 0.2, 'duplicate removed later vs at its source');
+});
+
+test('Thursday\'s votes stay late ballots when they also fix a typo in the last night entry', function () {
+  var r = M.forecast(data([[3300, 3100, FIRST], [4500, 3400, NIGHT, 'manual'], [3900, 3700, THU]]), P);
+  assert.strictEqual(r.phase, 2);
+  assert.strictEqual(r.observed.post.n, 3900 + 3700 - 3300 - 3100);
+});
+
+test('a lower count posted on certification day leaves nothing to count', function () {
+  var d = data([[3300, 3100, FIRST], [3600, 3400, NIGHT], [4400, 4250, THU], [5205, 5195, LAST], [5203, 5194, '2026-12-03T17:05:00-08:00']]);
+  var r = M.forecast(d, P), w = M.wobble(d, P);
+  assert.strictEqual(r.remaining[0.9], 0);
+  assert.strictEqual(r.pYes, 1);
+  assert.deepStrictEqual(w, { lo: 1, hi: 1 }, 'no wobble once the count is complete');
+});
+
+test('the page\'s plan gives the same needle, band and last chart point as the engine', function () {
+  var d = data([[3300, 3100, FIRST], [3750, 3620, NIGHT]]);
+  var steps = M.plan(d, P, {}, {}), msgs = [];
+  while (steps.length) { var m = steps.shift()(); if (m) msgs.push(m); }
+  var byType = function (t) { return msgs.filter(function (x) { return x.type === t; })[0]; };
+  var r = M.forecast(d, P);
+  assert.strictEqual(byType('needle').r.pYes, r.pYes);
+  assert.deepStrictEqual(byType('band').band, M.wobble(d, P));
+  var pts = byType('points').points;
+  assert.strictEqual(pts[pts.length - 1].pYes, r.pYes);
+});
+
+test('what Peanut expects from late ballots after election night', function () {
+  var none = M.forecast(data([[3300, 3100, FIRST], [4400, 4250, THU]]), P);
+  near(none.lateExpected, P.leans.post_election.mean, 1e-12, 'no in-person updates: the starting assumption');
+  var d = data([[3300, 3100, FIRST], [3750, 3620, NIGHT], [4400, 4250, THU]]);
+  assert.strictEqual(M.forecast(d, P).lateExpected, M.forecast(d, P, { upTo: 1 }).leans.postElection.mean);
+});
+
+test('the worker redraws every chart point when a number in the priors changes', function () {
+  var fs = require('fs'), vm = require('vm'), path = require('path'), dir = path.join(__dirname, '..', 'js');
+  var queue = [], posted = [];
+  var ctx = { self: { postMessage: function (m) { posted.push(JSON.parse(JSON.stringify(m))); } }, JSON: JSON, Math: Math, Date: Date,
+    setTimeout: function (f) { queue.push(f); } };
+  ctx.importScripts = function (f) { vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8'), ctx); };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(dir, 'peanut-worker.js'), 'utf8'), ctx);
+  function run(priors) {
+    ctx.self.onmessage({ data: JSON.parse(JSON.stringify({ key: 'k', data: d, priors: priors, remapTimes: false })) });
+    while (queue.length) queue.shift()();
+    var pts = posted.splice(0).filter(function (m) { return m.out && m.out.type === 'points'; })[0].out.points;
+    return pts.map(function (x) { return x.pYes; });
+  }
+  var d = data([[3300, 3100, FIRST], [3750, 3620, NIGHT], [4400, 4250, THU]]);
+  var before = run(P), P2 = JSON.parse(JSON.stringify(P));
+  P2.leans.post_election.mean = 0; // same version, as a mistaken mid-count edit would leave it
+  var after = run(P2);
+  assert.deepStrictEqual(after, M.trajectory(d, P2).map(function (x) { return x.pYes; }));
+  assert.notDeepStrictEqual(after.slice(0, -1), before.slice(0, -1), 'earlier points were redrawn too');
 });
 
 test('a county correction keeps the night\'s votes in the night', function () {

@@ -79,30 +79,45 @@
 
   function cleanHistory(data, priors, remapTimes) {
     var rows = (data && Array.isArray(data.history) ? data.history : []).map(function (h) {
-      return h ? { yes: count(h.yes), no: count(h.no), t: toMs(h.county_updated), when: h.county_updated } : null;
+      return h ? { yes: count(h.yes), no: count(h.no), t: toMs(h.county_updated), when: h.county_updated, manual: h.source === 'manual' } : null;
     }).filter(function (h) {
       return h && Number.isInteger(h.yes) && Number.isInteger(h.no) && h.yes >= 0 && h.no >= 0 && h.yes + h.no > 0 && h.t !== null;
     }).map(function (h) { h.n = h.yes + h.no; return h; }).sort(function (a, b) { return a.t - b.t; });
     var out = [];
     rows.forEach(function (r) {
-      // A correction lowers every earlier report it undercuts to its own counts, keeping their times, so the
-      // counts only ever grow and the corrected votes stay in the group (in-person or late) they were counted in.
-      for (var i = out.length - 1; i >= 0 && (r.yes < out[i].yes || r.no < out[i].no); i--) {
-        out[i].yes = Math.min(out[i].yes, r.yes); out[i].no = Math.min(out[i].no, r.no); out[i].n = out[i].yes + out[i].no;
+      // A correction replaces every earlier report it undercuts, so the counts only ever grow.
+      var undercut = null, county = false;
+      while (out.length && (r.yes < out[out.length - 1].yes || r.no < out[out.length - 1].no)) {
+        var gone = out.pop(); if (!undercut) undercut = gone;
+        if (!gone.manual) county = true;
       }
-      // Drop reports the correction emptied or made identical to the one before them.
-      out = out.filter(function (h, j) { return h.n > 0 && !(j > 0 && h.yes === out[j - 1].yes && h.no === out[j - 1].no); });
+      // r.g is the time that decides which group (in-person or late) a report's new votes belong to. A correction
+      // that came on its own and adds no votes overall belongs with the report it replaces, so a Wednesday fix of
+      // election-night counts stays with election night; r.t stays the time it was posted.
+      r.g = undercut && r.n <= undercut.n && alone(undercut, r, priors) ? undercut.g : r.t;
       var prev = out[out.length - 1];
       if (prev && prev.yes === r.yes && prev.no === r.no) return; // a re-stamp, not new votes
+      // The votes a county correction took back may belong to any earlier batch, so the batch ending here is unsure
+      // by that many votes, as a share of the batch. A fixed typo in a manual entry is not.
+      r.unsure = undercut && county && prev ? (Math.max(0, undercut.yes - r.yes) + Math.max(0, undercut.no - r.no)) / (r.n - prev.n) : 0;
       out.push(r);
     });
     if (remapTimes && priors && priors.demo_release_times) {
       out.forEach(function (r, i) {
         var list = priors.demo_release_times;
-        r.t = toMs(list[Math.min(i, list.length - 1)]);
+        r.t = r.g = toMs(list[Math.min(i, list.length - 1)]);
       });
     }
     return out;
+  }
+
+  // True when no scheduled post-election release falls between a report and a later correction (with two
+  // hours' slack for a late release), so the correction brought no new ballots of its own.
+  function alone(prev, r, priors) {
+    var from = priors ? toMs(priors.phases.election_night_ends) : Infinity;
+    return !(priors && priors.schedule || []).some(function (s) {
+      var t = toMs(s.at); return t >= from && t > prev.t && t <= r.t + 2 * 3600e3;
+    });
   }
 
   function phaseOf(ms, priors) {
@@ -176,7 +191,7 @@
       if (seen[j]) S[j][j] += q * q;
       seen[j] = true;
       var p = inc.yes / inc.n;
-      var r = priors.noise.increment_sd * priors.noise.increment_sd + p * (1 - p) / inc.n;
+      var r = priors.noise.increment_sd * priors.noise.increment_sd + p * (1 - p) / inc.n + (inc.unsure || 0) * (inc.unsure || 0);
       var k0 = S[0][j] / (S[j][j] + r), k1 = S[1][j] / (S[j][j] + r);
       var resid = (p - base) - m[j];
       m = [m[0] + k0 * resid, m[1] + k1 * resid];
@@ -251,7 +266,7 @@
       return certain(last, last.yes / last.n > threshold, 'final');
     }
 
-    hist.forEach(function (h) { h.phase = phaseOf(h.t, priors); });
+    hist.forEach(function (h) { h.phase = phaseOf(h.g, priors); });
     // A first report stamped during the night (late, or the 8:10 PM one was missed) still stands in
     // for the early mail; only a first report from after election night leaves the baseline mixed.
     var lateFirst = hist[0].phase === 1;
@@ -271,7 +286,9 @@
     for (var k = baseIdx + 1; k < hist.length; k++) {
       var dy = hist[k].yes - hist[k - 1].yes, dn = hist[k].n - hist[k - 1].n;
       if (dn > 0 && dy >= 0 && dy <= dn) {
-        increments.push({ yes: dy, n: dn, phase: hist[k].phase });
+        increments.push({ yes: dy, n: dn, phase: hist[k].phase, unsure: hist[k].unsure });
+        // The take quotes these counts, so it leaves out a batch a correction made unsure by more than 2 points.
+        if (hist[k].unsure > 0.02) continue;
         var grp = hist[k].phase === 2 ? observed.post : observed.night;
         grp.yes += dy; grp.n += dn;
       }
@@ -416,12 +433,17 @@
 
   function wobble(data, priors, opts) {
     opts = opts || {};
+    var r = forecast(data, priors, { remapTimes: opts.remapTimes });
+    if (isComplete(r)) return { lo: r.pYes, hi: r.pYes };
     var ps = wobbleSets(priors, opts).map(function (p2) {
       return forecast(data, p2, { sims: opts.sims || WOBBLE_SIMS, remapTimes: opts.remapTimes }).pYes;
     });
-    var shift = opts.sims ? 0 : wobbleShift(data, priors, forecast(data, priors, { remapTimes: opts.remapTimes }).pYes, opts.remapTimes);
+    var shift = opts.sims ? 0 : wobbleShift(data, priors, r.pYes, opts.remapTimes);
     return wobbleBand(ps, shift);
   }
+
+  // Nothing is left to count (certification day), so the chance no longer depends on any assumption.
+  function isComplete(r) { return r.status === 'live' && r.remaining[0.9] === 0; }
 
   // The forecast after each report, for the "how the needle moved" chart. With the default number
   // of simulations each point is exactly what the needle showed after that report.
@@ -445,6 +467,7 @@
     function wobbleStep(from) {
       return function () {
         if (r.status !== 'live') return null;
+        if (isComplete(r)) return from === 0 ? { type: 'band', band: { lo: r.pYes, hi: r.pYes } } : null;
         sets = sets || wobbleSets(priors);
         if (shift === null) shift = wobbleShift(data, priors, r.pYes, remap);
         sets.slice(from, from + 8).forEach(function (p2) { ps.push(forecast(data, p2, { sims: WOBBLE_SIMS, remapTimes: remap }).pYes); });
@@ -454,7 +477,7 @@
     var hist = cleanHistory(data, priors, remap);
     hist.forEach(function (h, i) {
       steps.push(function () {
-        var last = i === hist.length - 1, key = priors.version + JSON.stringify(hist.slice(0, i + 1).map(function (x) { return [x.yes, x.no, x.t]; }));
+        var last = i === hist.length - 1, key = priors.version + JSON.stringify(hist.slice(0, i + 1).map(function (x) { return [x.yes, x.no, x.t, x.g, x.unsure]; }));
         var p = last ? r.pYes : key in cache ? cache[key] : (cache[key] = forecast(data, priors, { upTo: i, remapTimes: remap }).pYes);
         points.push({ t: h.t, pYes: p });
         return last ? { type: 'points', points: points, final: r.status === 'final' } : null;
