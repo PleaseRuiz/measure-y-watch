@@ -8,6 +8,7 @@ Modes, picked from the environment:
   MANUAL_YES / MANUAL_NO set      manual entry (MANUAL_COUNTY_UPDATED optional)
   otherwise                       one fetch of the county page
 ALLOW_DECREASE=true (only set by a hand-started run) lets this run's reading go below the saved YES or NO.
+PRACTICE=1 (rehearsal only) writes data/rehearsal.json instead and never fetches the county page.
 """
 
 import http.client
@@ -21,7 +22,8 @@ from pathlib import Path
 import county
 
 ROOT = Path(__file__).resolve().parent.parent
-RESULTS = ROOT / "data" / "results.json"
+PRACTICE = os.environ.get("PRACTICE") == "1"
+RESULTS = ROOT / "data" / ("rehearsal.json" if PRACTICE else "results.json")
 CONFIG = ROOT / "config.json"
 LAST_FETCH = ROOT / ".last-fetch"  # restored from the Actions cache between runs
 
@@ -155,13 +157,15 @@ def main():
     now = datetime.now(county.PACIFIC).replace(microsecond=0)
     event = os.environ.get("EVENT", "")
     try:
-        results = load_json(RESULTS, "data/results.json")
+        results = load_json(RESULTS, f"data/{RESULTS.name}")
         before = json.dumps(results)
         expected_votes = read_expected_votes()
 
         reading = None
         if event != "push":
             reading = manual_reading(now)
+            if reading is None and PRACTICE:
+                raise CheckFailed("practice runs need YES and NO numbers")
             if reading is None:
                 try:
                     reading = county_reading(now)
@@ -185,7 +189,7 @@ def main():
         return 1
 
     if json.dumps(results) == before:
-        print("results.json unchanged")
+        print(f"{RESULTS.name} unchanged")
         write_outputs(changed="false")
         return 0
 
@@ -196,7 +200,7 @@ def main():
         message = f"Update results: {reading['source']} reading, county update {reading['county_updated']}"
     else:
         message = "Update expected_votes from config.json"
-    print(f"Saved results.json ({message})")
+    print(f"Saved {RESULTS.name} ({message})")
     write_outputs(changed="true", message=message)
     return 0
 
