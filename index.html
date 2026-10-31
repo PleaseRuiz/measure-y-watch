@@ -249,6 +249,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   </footer>
 </div>
 
+<script src="js/party.js"></script>
 <script>
 (function () {
   'use strict';
@@ -595,7 +596,21 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     setNeedle(state.baseDeg);
     renderMoves(d.history);
     maybeNotify(d, share);
+    celebrate(PARTY_PREVIEW || (!DEMO && !REHEARSAL && d.status === 'final' && share !== null && share > T));
   }
+
+  // Confetti when the county certifies a pass: once per visit, and again on a tap of MEASURE Y
+  // PASSED (js/party.js; never for readers who asked for less motion). ?demo=1&party=1 previews it.
+  var PARTY_PREVIEW = DEMO && params.get('party') === '1';
+  var party = { on: false, thrown: false };
+  function throwConfetti() {
+    try { return !!(window.MYWParty && window.MYWParty.burst()); } catch (e) { return false; } // decoration only
+  }
+  function celebrate(on) {
+    party.on = on;
+    if (on && !party.thrown) party.thrown = throwConfetti();
+  }
+  el.zone.addEventListener('click', function () { if (party.on) throwConfetti(); });
 
   function renderError() {
     state.mode = 'error';

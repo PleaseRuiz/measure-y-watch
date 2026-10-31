@@ -120,6 +120,14 @@ the county's official results.
   confirmed), the forecast tab rests ("Peanut is taking a break") and comes back by itself.
 - Sample numbers (`?demo=1`, `?rehearsal=1`) and a certified count never show the banner.
 
+### If Measure Y passes
+- The forecast tab puts a party hat on Peanut and drops confetti (once per visit) when Peanut is
+  more than 99% sure on a county update from Thu Nov 5 on. Election-night counts don't count.
+- When the county certifies a pass, both tabs drop confetti and Peanut keeps the hat. A tap on
+  Peanut, or on MEASURE Y PASSED, drops more.
+- Nothing happens if Measure Y fails. Readers whose device asks for less motion get the hat but no
+  confetti. `?demo=1&party=1` previews it on sample numbers. The confetti is `js/party.js`.
+
 ### FYI issues
 The workflows post status issues on GitHub (label `election-night-status`) that mention the
 repository owner, so the GitHub app can buzz. They're FYI only: each starts "No action needed.",
