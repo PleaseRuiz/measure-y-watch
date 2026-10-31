@@ -1,0 +1,40 @@
+# Election night only: keeps Update results running about every 5 minutes even when GitHub
+# starts its scheduled runs late or drops them. ops/keepalive.py says how.
+# Off switch: the repository variable KEEPALIVE=off skips it (README, "Election night is automatic").
+name: Keep-alive
+
+on:
+  schedule:
+    # Times are UTC. Pacific is UTC-8 after daylight saving ends on Nov 1.
+    # Tue Nov 3, 7:50 PM Pacific, with backups at 8:10 PM and 8:40 PM in case GitHub drops or
+    # delays a start. A backup that fires while one is running waits in line and starts after it.
+    - cron: "50 3 4 11 *"
+    - cron: "10 4 4 11 *"
+    - cron: "40 4 4 11 *"
+  workflow_dispatch:
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  keepalive:
+    if: vars.KEEPALIVE != 'off'
+    runs-on: ubuntu-latest
+    # Under GitHub's 6-hour job limit. The loop hands over to a fresh run after 5.5 hours.
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Start Update results every 5 minutes when none is queued or running (Tue 7:45 PM to Wed 5 AM Pacific)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python ops/keepalive.py

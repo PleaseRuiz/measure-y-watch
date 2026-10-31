@@ -1,0 +1,64 @@
+# During the counting windows: checks that county reads keep coming, the live page matches main
+# and the forecast engine works; starts Update results when needed and posts FYI status issues.
+# It never reads the county site. ops/watchdog.py says how.
+name: Watchdog
+
+on:
+  schedule:
+    # Times are UTC. Pacific is UTC-8 after daylight saving ends on Nov 1.
+    # Every 10 minutes, between Update results' runs.
+    # Election night, Tue Nov 3 7:55 PM to Wed Nov 4 4:55 AM Pacific (3 minutes after an update run).
+    - cron: "55 3 4 11 *"
+    - cron: "5-55/10 4-12 4 11 *"
+    # Thu Nov 5 to Mon Nov 16, 8:09 AM to 5:59 PM Pacific (5 minutes after an update run).
+    - cron: "9-59/10 16-23 5-16 11 *"
+    - cron: "9-59/10 0-1 6-17 11 *"
+  workflow_dispatch:
+
+concurrency:
+  group: watchdog
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+env:
+  PAGE_URL: https://pleaseruiz.github.io/measure-y-watch
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    # Normally under a minute; this leaves room for slow API answers and stays under the 10-minute spacing.
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Read-only: the watchdog never saves this cache, so it can't move the gap guard.
+      - name: Restore last county fetch time
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .last-fetch
+            .county-state.json
+          key: last-fetch-${{ github.run_id }}
+          restore-keys: last-fetch-
+
+      - name: Restore last county fetch time (older cache)
+        if: steps.cache.outputs.cache-matched-key == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .last-fetch
+          key: last-fetch-${{ github.run_id }}
+          restore-keys: last-fetch-
+
+      - name: Check county reads, the live page and the forecast engine
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python ops/watchdog.py

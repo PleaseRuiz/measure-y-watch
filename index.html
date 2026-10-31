@@ -94,6 +94,20 @@ a{color:var(--accent)}
 .chip-btn:hover{border-color:var(--muted)}
 .chip-btn .state{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.06em;color:var(--muted)}
 
+/* Banner: only while the numbers here may not be current. It sits over the needle, which dims
+   behind it, so nothing on the page moves and phones see it without scrolling. With no banner,
+   the wrapper and its empty slot change nothing on screen. */
+.dial-wrap{width:100%;max-width:540px}
+.dial-wrap.paused{position:relative}
+.dial-wrap.paused .dial{opacity:.15}
+.dial-wrap.paused .banner-slot{position:absolute;top:0;bottom:0;left:-8px;right:-8px;z-index:1;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.banner{pointer-events:auto;width:100%;max-width:400px;padding:12px 14px;border:1px solid var(--border);border-radius:16px;background:var(--card);box-shadow:var(--shadow);overflow-wrap:break-word}
+.banner-h{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
+.banner-r{margin:4px 0 0;font-size:14px;line-height:1.35;color:var(--ink-2)}
+.banner-a{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:10px;padding:0 16px;border-radius:12px;background:var(--btn);color:var(--btn-ink);font-size:15px;font-weight:700;text-decoration:none}
+.banner-a:hover{opacity:.92}
+@media (max-width:359px){.banner{padding:10px 12px}.banner-r{line-height:1.3}.banner-a{margin-top:8px}}
+
 /* Count */
 .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .stat{font-size:15px;color:var(--ink-2);font-variant-numeric:tabular-nums}
@@ -169,6 +183,8 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   <main class="grid">
     <section class="card dial-card" aria-labelledby="dialHeading">
       <h2 id="dialHeading" class="sr-only">Where YES stands</h2>
+      <div class="dial-wrap" id="dialWrap">
+      <div class="banner-slot" id="banner" role="status"></div>
       <svg class="dial" viewBox="0 0 400 250" role="img" aria-labelledby="dialTitle">
         <title id="dialTitle">Needle showing the YES share against the 50% pass line</title>
         <path class="seg s1" d="M35 225 A165 165 0 0 1 84.97 106.71"/>
@@ -183,6 +199,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
         <g class="needle" id="needle"><line x1="200" y1="225" x2="200" y2="76"/></g>
         <circle class="hub" cx="200" cy="225" r="15"/>
       </svg>
+      </div>
       <p class="zone mono" id="zone">LOADING</p>
       <div class="hero" aria-live="polite">
         <span class="hero-num" id="heroNum">–</span>
@@ -237,6 +254,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
   'use strict';
 
   var DATA_URL = 'data/results.json';
+  var STATUS_URL = 'data/status.json';
   var POLL_MS = 60000;
   var SPAN = 25; // points shown either side of the pass line
   var TZ = 'America/Los_Angeles';
@@ -290,10 +308,12 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     passLabel: $('passLabel'), loLabel: $('loLabel'), hiLabel: $('hiLabel'),
     wobbleBtn: $('wobbleBtn'), wobbleState: $('wobbleState'),
     countStat: $('countStat'), bar: $('bar'), barFill: $('barFill'), countNote: $('countNote'), nextUpdate: $('nextUpdate'),
-    moves: $('moves'), notifyBtn: $('notifyBtn'), shareBtn: $('shareBtn'), sched: $('sched'), sourceLink: $('sourceLink')
+    moves: $('moves'), notifyBtn: $('notifyBtn'), shareBtn: $('shareBtn'), sched: $('sched'), sourceLink: $('sourceLink'),
+    dialWrap: $('dialWrap'), banner: $('banner')
   };
 
-  var state = { data: null, lastStamp: null, baseDeg: 0, mode: 'loading', wobble: !reduceMotion, notify: false, notifiedShare: null };
+  var state = { data: null, lastStamp: null, baseDeg: 0, mode: 'loading', wobble: !reduceMotion, notify: false, notifiedShare: null,
+    fails: 0, status: { state: 'ok', reason: '' }, bannerKey: '' };
 
   function store(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
   function recall(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
@@ -373,6 +393,98 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     });
   }
 
+  // When the county last posted votes, or null. Only a post with votes counts as a release; the
+  // county can re-stamp its zero report.
+  function lastRelease(d) {
+    var L = d.latest || {};
+    return L.county_updated && L.yes + L.no > 0 ? new Date(L.county_updated).getTime() : null;
+  }
+
+  // ---------- banner ----------
+  // It shows while the numbers here may not be current, and sends readers to the county's results:
+  // data/status.json says the updates are broken or confirming a county correction; this page
+  // couldn't load the numbers LOAD_FAILS times in a row; or a county update is overdue here (the
+  // check that still works if GitHub itself stalls). Never with sample numbers, never once certified.
+
+  var LOAD_FAILS = 3;
+  var MIN = 60000, HOUR = 3600000;
+  // The county updates this page expects, from SCHEDULE (the last entry, certification, isn't one: no
+  // scheduled run reads it): the first count, each hour of the election-night block and each later day's
+  // update. One is overdue once its grace (30 minutes on election night, 45 after) has passed with no
+  // county update for it: for an hour, one from 30 minutes before it on; for a day, one from that
+  // midnight on. The first count and the night's first hour stay expected until they arrive, since the
+  // county always posts them. Later night hours are expected only through midnight, and a day's update
+  // stops being expected at midnight.
+  var EXPECTED = (function () {
+    var out = [], nightEnd = 0;
+    SCHEDULE.forEach(function (s) { if (s.hourlyUntil) nightEnd = new Date(s.hourlyUntil).getTime(); });
+    SCHEDULE.slice(0, -1).forEach(function (s) {
+      var t = new Date(s.t).getTime();
+      if (t >= nightEnd) {
+        var day = new Date(s.t.slice(0, 11) + '00:00:00' + s.t.slice(19)).getTime(); // midnight Pacific
+        out.push({ due: t + 45 * MIN, from: day, until: day + 24 * HOUR });
+        return;
+      }
+      // Night hours are expected only through midnight: the county's last post of the night varies, and
+      // a banner after it would be a false alarm (failed reads still show the banner all night).
+      var last = s.hourlyUntil ? Math.min(nightEnd - HOUR, t + 3 * HOUR) : t;
+      for (var h = t; h <= last; h += HOUR) out.push({ due: h + 30 * MIN, from: h - 30 * MIN, until: h === t ? Infinity : nightEnd });
+    });
+    return out;
+  })();
+
+  function overdue(now, lastUpd) {
+    return EXPECTED.some(function (e) { return now >= e.due && now < e.until && (lastUpd === null || lastUpd < e.from); });
+  }
+
+  // data/status.json, written by the update workflow when its state changes. A missing file means ok;
+  // one that can't be read leaves the last answer standing.
+  var PAUSED_REASON = {
+    broken: "Our automatic updates aren't working right now.",
+    confirming: "The county revised its numbers. We're confirming the change before showing it."
+  };
+  function readStatus(s) {
+    var st = s && s.state;
+    if (st !== 'broken' && st !== 'confirming') return { state: 'ok', reason: '' };
+    // One short sentence; anything else (missing, too long, a run-on word) gets the state's own.
+    var reason = typeof s.reason === 'string' ? s.reason.replace(/\s+/g, ' ').trim() : '';
+    if (!reason || reason.length > 120 || /\S{31}/.test(reason)) reason = PAUSED_REASON[st];
+    return { state: st, reason: reason };
+  }
+  function loadStatus() {
+    if (REHEARSAL) return Promise.resolve();
+    return fetch(STATUS_URL + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (r.status === 404) return {}; if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (s) { state.status = readStatus(s); }, function () {});
+  }
+
+  function bannerFor(now) {
+    var d = state.data;
+    if (DEMO || REHEARSAL || (d && d.status === 'final')) return null;
+    if (state.status.state !== 'ok') return { head: 'Live updates are paused', reason: state.status.reason };
+    if (state.fails >= LOAD_FAILS) return { head: 'Live updates are paused', reason: "We can't load the latest numbers right now." };
+    if (d && overdue(now, lastRelease(d))) return { head: 'Live updates are running late', reason: 'Our automatic updates are running late.' };
+    return null;
+  }
+
+  function renderBanner() {
+    try {
+      var b = bannerFor(nowMs());
+      var key = b ? b.head + '|' + b.reason : '';
+      if (key === state.bannerKey) return; // unchanged: don't repeat it to screen readers
+      state.bannerKey = key;
+      el.banner.textContent = '';
+      el.dialWrap.classList.toggle('paused', !!b);
+      if (!b) return;
+      var box = document.createElement('div'); box.className = 'banner';
+      var h = document.createElement('p'); h.className = 'banner-h'; h.textContent = b.head;
+      var p = document.createElement('p'); p.className = 'banner-r'; p.textContent = b.reason;
+      var a = document.createElement('a'); a.className = 'banner-a'; a.href = COUNTY_URL; a.textContent = "See the county's results";
+      box.appendChild(h); box.appendChild(p); box.appendChild(a);
+      el.banner.appendChild(box);
+    } catch (e) {} // the banner must never break the count
+  }
+
   function renderMoves(history) {
     el.moves.innerHTML = '';
     var rows = (history || []).filter(function (h) { return h.yes + h.no > 0; });
@@ -415,8 +527,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     el.hiLabel.textContent = Math.round(T + SPAN) + '%';
     if (d.source_url) el.sourceLink.href = d.source_url;
     var L = d.latest || { yes: 0, no: 0 };
-    // Only a post with votes counts as a release; the county can re-stamp its zero report.
-    var lastUpd = L.county_updated && L.yes + L.no > 0 ? new Date(L.county_updated).getTime() : null;
+    var lastUpd = lastRelease(d);
     renderSchedule(now, lastUpd);
     el.nextUpdate.textContent = nextUpdateLabel(now, lastUpd);
 
@@ -511,10 +622,14 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
 
   function load() {
     if (DEMO) { state.data = SAMPLE; render(SAMPLE); return; }
+    // status.json is read alongside, but the numbers never wait for it; the banner updates when either arrives.
+    loadStatus().then(renderBanner);
     fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (d) { state.data = d; render(d); })
-      .catch(function () { if (!state.data) renderError(); });
+      .then(function (d) { if (!d || typeof d !== 'object') throw new Error('Unreadable'); return d; })
+      .then(function (d) { state.fails = 0; state.data = d; render(d); }, function (e) { state.fails++; throw e; })
+      .catch(function () { if (!state.data) renderError(); })
+      .then(renderBanner);
   }
 
   // Wobble: a small jitter on the needle only. The numbers never change.

@@ -127,6 +127,20 @@ a{color:var(--accent)}
 .pn-zzz text{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;fill:var(--muted)}
 .pn-eyes{transition:transform .3s ease}
 
+/* Banner: only while the numbers here may not be current. It sits over the needle, which dims
+   behind it, so nothing on the page moves and phones see it without scrolling. With no banner,
+   the wrapper and its empty slot change nothing on screen. */
+.gauge-wrap{width:100%;max-width:540px}
+.gauge-wrap.paused{position:relative}
+.gauge-wrap.paused .gauge{opacity:.15}
+.gauge-wrap.paused .banner-slot{position:absolute;top:0;bottom:0;left:-8px;right:-8px;z-index:1;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.banner{pointer-events:auto;width:100%;max-width:400px;padding:12px 14px;border:1px solid var(--border);border-radius:16px;background:var(--card);box-shadow:var(--shadow);overflow-wrap:break-word}
+.banner-h{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
+.banner-r{margin:4px 0 0;font-size:14px;line-height:1.35;color:var(--ink-2)}
+.banner-a{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:10px;padding:0 16px;border-radius:12px;background:var(--btn);color:var(--btn-ink);font-size:15px;font-weight:700;text-decoration:none}
+.banner-a:hover{opacity:.92}
+@media (max-width:359px){.banner{padding:10px 12px}.banner-r{line-height:1.3}.banner-a{margin-top:8px}}
+
 /* Estimate */
 .big-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:10px;font-variant-numeric:tabular-nums}
 .big-row .yes{font-size:28px;font-weight:800;color:var(--t-yes)}
@@ -210,6 +224,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     <section class="card needle-card" aria-labelledby="needleHeading">
       <h2 id="needleHeading" class="needle-title brand mono" aria-label="PEANUT: Peninsula Election Analysis and Needle, Unofficial Tally">PEANUT</h2>
       <p class="needle-sub" id="needleSub"><b>P</b>eninsula <b>E</b>lection <b>A</b>nalysis &amp; <b>N</b>eedle, <b>U</b>nofficial <b>T</b>ally</p>
+      <div class="gauge-wrap" id="gaugeWrap">
+      <div class="banner-slot" id="banner" role="status"></div>
       <svg class="gauge asleep" id="gauge" viewBox="0 0 400 284" role="img" aria-labelledby="gaugeTitle">
         <title id="gaugeTitle">Needle showing the chance Measure Y passes</title>
         <g id="segs"></g>
@@ -268,6 +284,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
           </svg>
         </g>
       </svg>
+      </div>
       <p class="zone mono" id="zone">Loading</p>
       <div class="hero" aria-live="polite">
         <span class="hero-num" id="heroNum">–</span>
@@ -372,8 +389,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 
   var DATA_URL = 'data/results.json';
   var PRIORS_URL = 'data/peanut-priors.json';
+  var STATUS_URL = 'data/status.json';
   var POLL_MS = 60000;
   var TZ = 'America/Los_Angeles';
+  var COUNTY_URL = 'https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html';
 
   // Sample numbers for ?demo=1 only: a made-up close race, still undecided, so the needle has something to do.
   var SAMPLE = {
@@ -400,7 +419,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     pill: $('pill'), pillText: $('pillText'), updated: $('updated'), gauge: $('gauge'), gaugeTitle: $('gaugeTitle'), segs: $('segs'), band: $('band'),
     pointer: $('pointer'), tilt: $('peanutTilt'), eyes: $('pnEyes'), zone: $('zone'), heroNum: $('heroNum'), heroLabel: $('heroLabel'), metaLine: $('metaLine'),
     take: $('take'), wobbleBtn: $('wobbleBtn'), wobbleState: $('wobbleState'), needleSub: $('needleSub'),
-    estHeading: $('estHeading'), estBody: $('estBody'), movedBody: $('movedBody'), assume: $('assume'), priorTable: $('priorTable')
+    estHeading: $('estHeading'), estBody: $('estBody'), movedBody: $('movedBody'), assume: $('assume'), priorTable: $('priorTable'),
+    gaugeWrap: $('gaugeWrap'), banner: $('banner')
   };
 
   var nf = new Intl.NumberFormat('en-US');
@@ -814,30 +834,147 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   }
 
   // "paused": true in data/peanut-priors.json turns the forecast off for everyone, open pages included.
-  function showPaused() {
+  // So does a problem with the live updates (data/status.json), with the banner's reason.
+  function showPaused(reason) {
     view.live = false; view.lo = view.hi = view.p = 0.5;
     setMood('', true); setPointer(0.5); el.band.setAttribute('d', ''); showWobbleButton();
     el.gaugeTitle.textContent = 'Forecast paused';
     el.zone.className = 'zone mono'; el.zone.textContent = 'Peanut is taking a break';
     el.heroNum.textContent = '–'; el.heroLabel.textContent = 'forecast paused';
     el.metaLine.textContent = '';
-    el.take.innerHTML = 'The forecast is paused while we check a problem with the data or the model, not because of what it shows. The <a href="' + LIVE_HREF + '">Live count</a> tab has the actual numbers.';
+    if (reason) el.take.textContent = reason;
+    else el.take.innerHTML = 'The forecast is paused while we check a problem with the data or the model, not because of what it shows. The <a href="' + LIVE_HREF + '">Live count</a> tab has the actual numbers.';
     el.estBody.innerHTML = '<p class="note" style="margin-top:10px">Back when the forecast is.</p>';
     el.movedBody.innerHTML = '<p class="note" style="margin-top:10px">Back when the forecast is.</p>';
     el.assume.innerHTML = '<li>Back when the forecast is.</li>';
   }
 
+  // ---------- banner ----------
+  // The Live count tab's banner, with the same rules (see index.html): it shows while the numbers here
+  // may not be current and sends readers to the county's results. While data/status.json says the
+  // updates are broken or confirming a county correction, the forecast rests too.
+
+  // The county's update schedule, as on the Live count tab (Pacific time).
+  var SCHEDULE = [
+    { t: '2026-11-03T20:10:00-08:00' },
+    { t: '2026-11-03T21:00:00-08:00', hourlyUntil: '2026-11-04T03:00:00-08:00' },
+    { t: '2026-11-05T16:30:00-08:00' },
+    { t: '2026-11-06T16:30:00-08:00' },
+    { t: '2026-11-09T16:30:00-08:00' },
+    { t: '2026-11-12T09:30:00-08:00' },
+    { t: '2026-11-13T16:30:00-08:00' },
+    { t: '2026-11-16T16:30:00-08:00' },
+    { t: '2026-12-03T17:00:00-08:00' }
+  ];
+  var LOAD_FAILS = 3;
+  var MIN = 60000, HOUR = 3600000;
+  // The county updates the pages expect; see index.html.
+  var EXPECTED = (function () {
+    var out = [], nightEnd = 0;
+    SCHEDULE.forEach(function (s) { if (s.hourlyUntil) nightEnd = new Date(s.hourlyUntil).getTime(); });
+    SCHEDULE.slice(0, -1).forEach(function (s) {
+      var t = new Date(s.t).getTime();
+      if (t >= nightEnd) {
+        var day = new Date(s.t.slice(0, 11) + '00:00:00' + s.t.slice(19)).getTime(); // midnight Pacific
+        out.push({ due: t + 45 * MIN, from: day, until: day + 24 * HOUR });
+        return;
+      }
+      // Night hours are expected only through midnight: the county's last post of the night varies, and
+      // a banner after it would be a false alarm (failed reads still show the banner all night).
+      var last = s.hourlyUntil ? Math.min(nightEnd - HOUR, t + 3 * HOUR) : t;
+      for (var h = t; h <= last; h += HOUR) out.push({ due: h + 30 * MIN, from: h - 30 * MIN, until: h === t ? Infinity : nightEnd });
+    });
+    return out;
+  })();
+
+  function overdue(now, lastUpd) {
+    return EXPECTED.some(function (e) { return now >= e.due && now < e.until && (lastUpd === null || lastUpd < e.from); });
+  }
+
+  // When the county last posted votes, or null (the county can re-stamp its zero report).
+  function lastRelease(d) {
+    var L = d.latest || {};
+    return L.county_updated && L.yes + L.no > 0 ? new Date(L.county_updated).getTime() : null;
+  }
+
+  var PAUSED_REASON = {
+    broken: "Our automatic updates aren't working right now.",
+    confirming: "The county revised its numbers. We're confirming the change before showing it."
+  };
+  function readStatus(s) {
+    var st = s && s.state;
+    if (st !== 'broken' && st !== 'confirming') return { state: 'ok', reason: '' };
+    // One short sentence; anything else (missing, too long, a run-on word) gets the state's own.
+    var reason = typeof s.reason === 'string' ? s.reason.replace(/\s+/g, ' ').trim() : '';
+    if (!reason || reason.length > 120 || /\S{31}/.test(reason)) reason = PAUSED_REASON[st];
+    return { state: st, reason: reason };
+  }
+
+  // Failed loads of the numbers in a row, the last numbers loaded and the last status.json answer.
+  var bn = { fails: 0, data: null, status: { state: 'ok', reason: '' }, key: '' };
+
+  // data/status.json, written by the update workflow when its state changes. A missing file means ok;
+  // one that can't be read leaves the last answer standing. The forecast waits for it, but not for long.
+  function loadStatus() {
+    if (DEMO || REHEARSAL) return Promise.resolve();
+    var got = fetch(STATUS_URL + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (r.status === 404) return {}; if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (s) { bn.status = readStatus(s); }, function () {});
+    return Promise.race([got, new Promise(function (done) { setTimeout(done, 10000); })]);
+  }
+
+  // The banner's reason while status.json pauses the updates, else ''.
+  function statusPause(data) {
+    return DEMO || REHEARSAL || bn.status.state === 'ok' || (data && data.status === 'final') ? '' : bn.status.reason;
+  }
+
+  function bannerFor(now) {
+    var d = bn.data;
+    if (DEMO || REHEARSAL || (d && d.status === 'final')) return null;
+    if (bn.status.state !== 'ok') return { head: 'Live updates are paused', reason: bn.status.reason };
+    if (bn.fails >= LOAD_FAILS) return { head: 'Live updates are paused', reason: "We can't load the latest numbers right now." };
+    if (d && overdue(now, lastRelease(d))) return { head: 'Live updates are running late', reason: 'Our automatic updates are running late.' };
+    return null;
+  }
+
+  function renderBanner() {
+    try {
+      var b = bannerFor(Date.now());
+      var key = b ? b.head + '|' + b.reason : '';
+      if (key === bn.key) return; // unchanged: don't repeat it to screen readers
+      bn.key = key;
+      el.banner.textContent = '';
+      el.gaugeWrap.classList.toggle('paused', !!b);
+      if (!b) return;
+      var box = document.createElement('div'); box.className = 'banner';
+      var h = document.createElement('p'); h.className = 'banner-h'; h.textContent = b.head;
+      var p = document.createElement('p'); p.className = 'banner-r'; p.textContent = b.reason;
+      var a = document.createElement('a'); a.className = 'banner-a'; a.href = COUNTY_URL; a.textContent = "See the county's results";
+      box.appendChild(h); box.appendChild(p); box.appendChild(a);
+      el.banner.appendChild(box);
+    } catch (e) {} // the banner must never break the forecast
+  }
+
   function load() {
-    var dataP = DEMO ? Promise.resolve(SAMPLE) : fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    var dataP = DEMO ? Promise.resolve(SAMPLE) : fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { if (!d || typeof d !== 'object') throw new Error('Unreadable'); return d; });
+    dataP.then(function (d) { bn.fails = 0; bn.data = d; }, function () { bn.fails++; });
+    var statusP = loadStatus();
     // The assumptions are re-read on every check, so a pause (or a fix) reaches open pages too.
     var priorsP = fetch(PRIORS_URL + '?t=' + Date.now(), { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .catch(function (err) { if (state.priors) return state.priors; throw err; });
-    Promise.all([dataP, priorsP]).then(function (res) {
+    Promise.all([dataP, priorsP, statusP]).then(function (res) {
       var data = res[0], priors = res[1], priorsText = JSON.stringify(priors);
       if (priorsText !== state.priorsText) {
         state.priorsText = priorsText; state.priors = priors; state.traj = {}; state.key = null;
         renderPriorTable(priors);
+      }
+      var stop = statusPause(data);
+      if (stop) {
+        if (state.key !== 'status:' + stop) { state.key = 'status:' + stop; setHeader(data); showPaused(stop); }
+        return;
       }
       if (priors.paused === true) {
         if (state.key !== 'paused') { state.key = 'paused'; setHeader(data); showPaused(); }
@@ -848,10 +985,18 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
       state.key = key;
       setTimeout(function () { compute(data, key); }, 0);
     }).catch(function () {
-      if (state.key) return;
-      showError('data');
-      priorsP.then(function (p) { if (!state.priorsText) renderPriorTable(p); }, function () {});
-    });
+      return statusP.then(function () {
+        // The numbers didn't load this time; a forecast already on screen still rests if status.json says so.
+        var stop = state.key && statusPause(bn.data);
+        if (stop) {
+          if (state.key !== 'status:' + stop) { state.key = 'status:' + stop; showPaused(stop); }
+          return;
+        }
+        if (state.key) return;
+        showError('data');
+        priorsP.then(function (p) { if (!state.priorsText) renderPriorTable(p); }, function () {});
+      });
+    }).then(renderBanner);
   }
 
   load();

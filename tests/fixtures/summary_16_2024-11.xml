@@ -1,0 +1,229 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<NewDataSet>
+  <TotalBallotsCast>337241</TotalBallotsCast>
+  <VoterTurnout>76.1%</VoterTurnout>
+  <RegisteredVoters>443164</RegisteredVoters>
+  <GeneratedDate>2024-12-04T19:42:25.300-08:00</GeneratedDate>
+  <Table>
+    <ElectionID>16</ElectionID>
+    <RaceID>87</RaceID>
+    <GroupID>50</GroupID>
+    <GroupName>School Measures</GroupName>
+    <GroupSequence>7</GroupSequence>
+    <RaceName>Belmont-Redwood Shores School District, Measure P (55 Percent Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>206</ContestantID>
+    <ContestantName>BONDS YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>12258</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>1454</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>13712</TotalVotes>
+    <NumberOfPrec>34</NumberOfPrec>
+    <PrecReported>34</PrecReported>
+    <TimesCounted>22016</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>1</OverVotes>
+    <UnderVotes>1681</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>67.43%</ContestantVotePercent>
+    <ContestantSeqNoExt>206</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>16</ElectionID>
+    <RaceID>87</RaceID>
+    <GroupID>50</GroupID>
+    <GroupName>School Measures</GroupName>
+    <GroupSequence>7</GroupSequence>
+    <RaceName>Belmont-Redwood Shores School District, Measure P (55 Percent Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>207</ContestantID>
+    <ContestantName>BONDS NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>5856</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>766</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>6622</TotalVotes>
+    <NumberOfPrec>34</NumberOfPrec>
+    <PrecReported>34</PrecReported>
+    <TimesCounted>22016</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>1</OverVotes>
+    <UnderVotes>1681</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>32.57%</ContestantVotePercent>
+    <ContestantSeqNoExt>207</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>16</ElectionID>
+    <RaceID>95</RaceID>
+    <GroupID>50</GroupID>
+    <GroupName>School Measures</GroupName>
+    <GroupSequence>7</GroupSequence>
+    <RaceName>Woodside Elementary School District, Measure Y (2/3 Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>222</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>1352</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>184</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>1536</TotalVotes>
+    <NumberOfPrec>11</NumberOfPrec>
+    <PrecReported>11</PrecReported>
+    <TimesCounted>2139</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>154</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>77.38%</ContestantVotePercent>
+    <ContestantSeqNoExt>222</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>16</ElectionID>
+    <RaceID>95</RaceID>
+    <GroupID>50</GroupID>
+    <GroupName>School Measures</GroupName>
+    <GroupSequence>7</GroupSequence>
+    <RaceName>Woodside Elementary School District, Measure Y (2/3 Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>223</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>401</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>48</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>449</TotalVotes>
+    <NumberOfPrec>11</NumberOfPrec>
+    <PrecReported>11</PrecReported>
+    <TimesCounted>2139</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>154</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>22.62%</ContestantVotePercent>
+    <ContestantSeqNoExt>223</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>16</ElectionID>
+    <RaceID>96</RaceID>
+    <GroupID>51</GroupID>
+    <GroupName>City/Town Measures</GroupName>
+    <GroupSequence>8</GroupSequence>
+    <RaceName>City of Belmont, Measure DD (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>224</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>9873</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>1072</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>10945</TotalVotes>
+    <NumberOfPrec>16</NumberOfPrec>
+    <PrecReported>16</PrecReported>
+    <TimesCounted>14185</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>1260</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>84.68%</ContestantVotePercent>
+    <ContestantSeqNoExt>224</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>16</ElectionID>
+    <RaceID>96</RaceID>
+    <GroupID>51</GroupID>
+    <GroupName>City/Town Measures</GroupName>
+    <GroupSequence>8</GroupSequence>
+    <RaceName>City of Belmont, Measure DD (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>225</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>1687</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>293</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>1980</TotalVotes>
+    <NumberOfPrec>16</NumberOfPrec>
+    <PrecReported>16</PrecReported>
+    <TimesCounted>14185</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>1260</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>15.32%</ContestantVotePercent>
+    <ContestantSeqNoExt>225</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+</NewDataSet>

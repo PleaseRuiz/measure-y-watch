@@ -1,0 +1,89 @@
+# Before the count: one county read plus a check of the live page, the forecast engine and the
+# workflows, posted as an FYI status issue. Also the alert drill. ops/preflight.py says how.
+name: Preflight
+
+on:
+  schedule:
+    # Times are UTC. Pacific is UTC-8 after daylight saving ends on Nov 1 (2 AM).
+    # Sun Nov 1, 2:13 PM Pacific: the alert drill (no county read).
+    - cron: "13 22 1 11 *"
+    # Tue Nov 3, 5:05 PM Pacific: the check, reading the county results page.
+    - cron: "5 1 4 11 *"
+    # Tue Nov 3, 5:15 PM Pacific: the check, reading the county's backup data feed (XML).
+    - cron: "15 1 4 11 *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "County source to read once: html (the results page) or xml (the backup data feed)"
+        required: false
+        type: choice
+        options:
+          - html
+          - xml
+        default: html
+      drill:
+        description: "Drill: post a test issue only (no county read)"
+        required: false
+        type: boolean
+        default: false
+
+# Same group as Update results, so a preflight never runs at the same time as an update.
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+env:
+  PAGE_URL: https://pleaseruiz.github.io/measure-y-watch
+  DRILL: ${{ github.event.schedule == '13 22 1 11 *' || inputs.drill == true }}
+  SOURCE: ${{ github.event.schedule == '15 1 4 11 *' && 'xml' || inputs.source || 'html' }}
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore last county fetch time
+        id: cache
+        if: env.DRILL != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .last-fetch
+            .county-state.json
+          key: last-fetch-${{ github.run_id }}
+          restore-keys: last-fetch-
+
+      - name: Restore last county fetch time (older cache)
+        if: env.DRILL != 'true' && steps.cache.outputs.cache-matched-key == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .last-fetch
+          key: last-fetch-${{ github.run_id }}
+          restore-keys: last-fetch-
+
+      - name: Preflight
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEPALIVE_SETTING: ${{ vars.KEEPALIVE }}
+        run: python ops/preflight.py
+
+      # Saved even when the check fails, so its county read counts for the next run's gap guard.
+      - name: Save last county fetch time
+        if: always() && env.DRILL != 'true' && hashFiles('.last-fetch') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .last-fetch
+            .county-state.json
+          key: last-fetch-${{ github.run_id }}

@@ -1,0 +1,3 @@
+# Fixtures keep their exact bytes: the county XMLs have a byte order mark and CRLF line ends.
+* -text
+*.xml -whitespace

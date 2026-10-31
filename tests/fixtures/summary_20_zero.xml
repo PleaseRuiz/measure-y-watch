@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<NewDataSet>
+  <TotalBallotsCast>0</TotalBallotsCast>
+  <VoterTurnout>0%</VoterTurnout>
+  <RegisteredVoters>449447</RegisteredVoters>
+  <GeneratedDate>2026-10-26T11:41:33.447-07:00</GeneratedDate>
+  <Table>
+    <ElectionID>20</ElectionID>
+    <RaceID>115</RaceID>
+    <RaceName>County of San Mateo, Measure U (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>219</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>-</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>-</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>-</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>-</ProvisionalVotingVotes>
+    <Votes>-</Votes>
+    <TotalVotes>0</TotalVotes>
+    <TimesCounted>0</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>0</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>0.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>219</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>20</ElectionID>
+    <RaceID>115</RaceID>
+    <RaceName>County of San Mateo, Measure U (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>220</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>-</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>-</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>-</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>-</ProvisionalVotingVotes>
+    <Votes>-</Votes>
+    <TotalVotes>0</TotalVotes>
+    <TimesCounted>0</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>0</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>0.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>220</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>20</ElectionID>
+    <RaceID>116</RaceID>
+    <RaceName>City of Belmont, Measure Y (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>221</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>-</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>-</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>-</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>-</ProvisionalVotingVotes>
+    <Votes>-</Votes>
+    <TotalVotes>0</TotalVotes>
+    <TimesCounted>0</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>0</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>0.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>221</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>20</ElectionID>
+    <RaceID>116</RaceID>
+    <RaceName>City of Belmont, Measure Y (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>222</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>-</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>-</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>-</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>-</ProvisionalVotingVotes>
+    <Votes>-</Votes>
+    <TotalVotes>0</TotalVotes>
+    <TimesCounted>0</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>0</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>0.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>222</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>20</ElectionID>
+    <RaceID>117</RaceID>
+    <RaceName>City of Brisbane, Measure X (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>223</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>-</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>-</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>-</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>-</ProvisionalVotingVotes>
+    <Votes>-</Votes>
+    <TotalVotes>0</TotalVotes>
+    <TimesCounted>0</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>0</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>0.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>223</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>20</ElectionID>
+    <RaceID>117</RaceID>
+    <RaceName>City of Brisbane, Measure X (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>224</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>-</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>-</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>-</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>-</ProvisionalVotingVotes>
+    <Votes>-</Votes>
+    <TotalVotes>0</TotalVotes>
+    <TimesCounted>0</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>0</OverVotes>
+    <UnderVotes>0</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>0.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>224</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+</NewDataSet>

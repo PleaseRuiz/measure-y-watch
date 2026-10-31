@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<NewDataSet>
+  <TotalBallotsCast>108346</TotalBallotsCast>
+  <VoterTurnout>24.37%</VoterTurnout>
+  <RegisteredVoters>444497</RegisteredVoters>
+  <GeneratedDate>2025-04-03T15:19:12.063-07:00</GeneratedDate>
+  <Table>
+    <ElectionID>17</ElectionID>
+    <RaceID>1</RaceID>
+    <RaceName>County of San Mateo, Measure A (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>1</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>89745</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>1155</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>90900</TotalVotes>
+    <NumberOfPrec>246</NumberOfPrec>
+    <PrecReported>246</PrecReported>
+    <TimesCounted>108346</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>11</OverVotes>
+    <UnderVotes>117</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>84.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>1</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+  <Table>
+    <ElectionID>17</ElectionID>
+    <RaceID>1</RaceID>
+    <RaceName>County of San Mateo, Measure A (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>2</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>16766</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>552</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>17318</TotalVotes>
+    <NumberOfPrec>246</NumberOfPrec>
+    <PrecReported>246</PrecReported>
+    <TimesCounted>108346</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>11</OverVotes>
+    <UnderVotes>117</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>16.00%</ContestantVotePercent>
+    <ContestantSeqNoExt>2</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+    <ContestantWinner>N</ContestantWinner>
+  </Table>
+</NewDataSet>

@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<NewDataSet>
+  <TotalBallotsCast>252233</TotalBallotsCast>
+  <VoterTurnout>58.29%</VoterTurnout>
+  <RegisteredVoters>432707</RegisteredVoters>
+  <GeneratedDate>2022-12-08T15:44:17.230-08:00</GeneratedDate>
+  <Table>
+    <ElectionID>11</ElectionID>
+    <RaceID>104</RaceID>
+    <GroupID>38</GroupID>
+    <GroupName>City Measures</GroupName>
+    <GroupSequence>9</GroupSequence>
+    <RaceName>City of Belmont, Measure K (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>247</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>7920</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>432</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>8352</TotalVotes>
+    <NumberOfPrec>15</NumberOfPrec>
+    <PrecReported>15</PrecReported>
+    <TimesCounted>11060</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>1</OverVotes>
+    <UnderVotes>527</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>79.30%</ContestantVotePercent>
+    <ContestantSeqNoExt>247</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+  </Table>
+  <Table>
+    <ElectionID>11</ElectionID>
+    <RaceID>104</RaceID>
+    <GroupID>38</GroupID>
+    <GroupName>City Measures</GroupName>
+    <GroupSequence>9</GroupSequence>
+    <RaceName>City of Belmont, Measure K (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>248</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>1945</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>235</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>2180</TotalVotes>
+    <NumberOfPrec>15</NumberOfPrec>
+    <PrecReported>15</PrecReported>
+    <TimesCounted>11060</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>1</OverVotes>
+    <UnderVotes>527</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>20.70%</ContestantVotePercent>
+    <ContestantSeqNoExt>248</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+  </Table>
+  <Table>
+    <ElectionID>11</ElectionID>
+    <RaceID>112</RaceID>
+    <GroupID>38</GroupID>
+    <GroupName>City Measures</GroupName>
+    <GroupSequence>9</GroupSequence>
+    <RaceName>City of Pacifica, Measure Y (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>261</ContestantID>
+    <ContestantName>YES</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>8924</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>653</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>9577</TotalVotes>
+    <NumberOfPrec>13</NumberOfPrec>
+    <PrecReported>13</PrecReported>
+    <TimesCounted>16678</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>4</OverVotes>
+    <UnderVotes>543</UnderVotes>
+    <ContestantColor>#F27935</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>59.37%</ContestantVotePercent>
+    <ContestantSeqNoExt>261</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+  </Table>
+  <Table>
+    <ElectionID>11</ElectionID>
+    <RaceID>112</RaceID>
+    <GroupID>38</GroupID>
+    <GroupName>City Measures</GroupName>
+    <GroupSequence>9</GroupSequence>
+    <RaceName>City of Pacifica, Measure Y (Majority Approval Required)</RaceName>
+    <VoteFor>1</VoteFor>
+    <NumPositions>1</NumPositions>
+    <NonPartisanRace>N</NonPartisanRace>
+    <ContestWithdrawn>N</ContestWithdrawn>
+    <RunOff>N</RunOff>
+    <MajorPercent>1</MajorPercent>
+    <MinimumVotes>0</MinimumVotes>
+    <ContestantID>262</ContestantID>
+    <ContestantName>NO</ContestantName>
+    <Party />
+    <PartyName />
+    <EarlyVotingVotes>0</EarlyVotingVotes>
+    <VotebyMailBallotsVotes>5830</VotebyMailBallotsVotes>
+    <VoteCenterBallotsVotes>724</VoteCenterBallotsVotes>
+    <ProvisionalVotingVotes>0</ProvisionalVotingVotes>
+    <Votes>0</Votes>
+    <TotalVotes>6554</TotalVotes>
+    <NumberOfPrec>13</NumberOfPrec>
+    <PrecReported>13</PrecReported>
+    <TimesCounted>16678</TimesCounted>
+    <BlankVoted>0</BlankVoted>
+    <OverVotes>4</OverVotes>
+    <UnderVotes>543</UnderVotes>
+    <ContestantColor>#CD6FDE</ContestantColor>
+    <ContestantWithdrawn>N</ContestantWithdrawn>
+    <ContestantVotePercent>40.63%</ContestantVotePercent>
+    <ContestantSeqNoExt>262</ContestantSeqNoExt>
+    <ContestantWriteIn>N</ContestantWriteIn>
+  </Table>
+</NewDataSet>

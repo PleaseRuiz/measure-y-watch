@@ -15,6 +15,9 @@ def main():
     except (urllib.error.URLError, TimeoutError) as e:
         print(f"Fetch failed: {getattr(e, 'reason', e)}")
         return 1
+    except county.ParseError as e:
+        print(f"Fetch failed: {e}")
+        return 1
     print(f"Fetched county page ({len(html):,} characters)")
 
     try:
