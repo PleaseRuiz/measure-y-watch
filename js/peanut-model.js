@@ -250,6 +250,9 @@
 
   var QS = [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95];
   var BASE_MERGE_MS = 20 * 60000;
+  // Peanut's worst case for the votes still out (r.remainingMax, the bound behind confirmedPass()) is this many
+  // standard deviations above its turnout estimate, on the log scale the estimate is fitted on.
+  var BOUND_Z = 4.5;
   // The wobble: 96 redraws of the assumptions with 800 simulations each (checked against a 600-redraw reference).
   var WOBBLE_SETS = 96, WOBBLE_SIMS = 800;
 
@@ -274,7 +277,7 @@
     var threshold = (data && data.threshold) || 0.5;
 
     if (data && data.status === 'final' && typeof opts.upTo !== 'number') {
-      return certain(last, last.yes / last.n > threshold, 'final');
+      return certain(last, last.yes / last.n > threshold, 'final', threshold);
     }
 
     hist.forEach(function (h) { h.phase = phaseOf(h.g, priors); });
@@ -318,7 +321,9 @@
     var VC = priors.phases.vote_center_share;
     // A first report from later in the night already holds some vote-center ballots.
     var vcInBase = nowPhase <= 1 && lateFirst ? Math.max(0, scheduleAt(base.t, priors).mean - priors.schedule[0].counted_share) : 0;
-    // Past the last scheduled release (certification day) nothing is left to count.
+    // Past the last scheduled release (certification day) the simulations treat the count as complete: nothing is
+    // left to count, so the chance no longer depends on any assumption. The bound behind confirmedPass()
+    // (remainingMax, below) still allows for the schedule's last-point uncertainty.
     var complete = scheduleAt(last.t, priors).mean >= 0.9995;
 
     var sims = opts.sims || priors.sims || 20000;
@@ -353,6 +358,13 @@
       if (shareFinal > threshold) pass++;
     }
 
+    // Peanut's worst case for the votes on Y still out: BOUND_Z standard deviations above its turnout estimate
+    // (the fitted log-normal total the simulations draw from), minus the votes counted, rounded up to a whole
+    // vote. It is the bound behind confirmedPass(). It reads the fitted distribution, not the draws, so it does
+    // not move with the random seed, priors.version or the number of simulations, and every other number stays
+    // the same. On a complete count it keeps the schedule's last-point uncertainty instead of dropping to 0.
+    var remainingMax = Math.max(0, Math.ceil(Math.exp(tot.meanLog + BOUND_Z * tot.sdLog) - last.n));
+
     var ones = finals.map(function () { return 1; });
     var shareQ = weightedQuantiles(finals, ones, QS);
     var remQ = weightedQuantiles(remaining, ones, [0.1, 0.5, 0.9]);
@@ -365,10 +377,13 @@
       status: 'live',
       phase: nowPhase,
       baseMixed: baseMixed,
-      counted: { yes: last.yes, no: last.no, n: last.n, share: last.yes / last.n, when: last.when },
+      // t: when the count was posted, in ms (on the release schedule for rehearsal data); confirmedPass() reads it.
+      counted: { yes: last.yes, no: last.no, n: last.n, share: last.yes / last.n, when: last.when, t: last.t },
+      threshold: threshold,
       pYes: pass / sims,
       finalShare: shareQ,
       remaining: remQ,
+      remainingMax: remainingMax,
       totalVotes: totQ,
       countedFraction: last.n / totQ[0.5],
       baseShare: baseShare,
@@ -389,15 +404,32 @@
     };
   }
 
-  function certain(last, passed, status) {
+  function certain(last, passed, status, threshold) {
     var sh = last.yes / last.n, q = {};
     QS.forEach(function (k) { q[k] = sh; });
     return {
       status: status, phase: 2, pYes: passed ? 1 : 0, finalShare: q,
-      remaining: { 0.1: 0, 0.5: 0, 0.9: 0 }, totalVotes: { 0.1: last.n, 0.5: last.n, 0.9: last.n },
-      countedFraction: 1, counted: { yes: last.yes, no: last.no, n: last.n, share: sh, when: last.when },
-      trailingNeeds: null
+      remaining: { 0.1: 0, 0.5: 0, 0.9: 0 }, remainingMax: 0, totalVotes: { 0.1: last.n, 0.5: last.n, 0.9: last.n },
+      countedFraction: 1, counted: { yes: last.yes, no: last.no, n: last.n, share: sh, when: last.when, t: last.t },
+      threshold: threshold, trailingNeeds: null
     };
+  }
+
+  // ---------- confirmed to pass ----------
+
+  // Nothing is called on election night: only a count posted from Thu Nov 5, 2026 (Pacific) can confirm a pass.
+  var CONFIRM_FROM = Date.parse('2026-11-05T00:00:00-08:00');
+
+  // Measure Y is confirmed to pass when a count posted from Thu Nov 5 on leaves YES above the pass line even if
+  // every one of the votes in Peanut's worst case for the votes still out (r.remainingMax, BOUND_Z standard
+  // deviations above its turnout estimate) were a NO. At 50% that means YES leads by more than r.remainingMax; a
+  // tie fails. The certainty rests on Peanut's estimate of the votes still out: a count the schedule says is
+  // complete still carries the schedule's last-point uncertainty, so a lead of a handful of votes is not called.
+  // Only a live forecast is confirmed: for a certified count (r.status 'final') this returns false and the page
+  // shows the county's result instead.
+  function confirmedPass(r) {
+    return !!r && r.status === 'live' && !!r.counted && r.counted.t >= CONFIRM_FROM &&
+      r.counted.yes > r.threshold * (r.counted.n + r.remainingMax);
   }
 
   // The wobble: the middle half of the chances Peanut gets when its assumptions (lean means,
@@ -502,6 +534,7 @@
   return {
     forecast: forecast, trajectory: trajectory, wobble: wobble, wobbleSets: wobbleSets, wobbleBand: wobbleBand,
     wobbleShift: wobbleShift, plan: plan, cleanHistory: cleanHistory, phaseOf: phaseOf, scheduleAt: scheduleAt,
-    leanPosterior: leanPosterior, makeRng: makeRng, hashString: hashString, normInv: normInv
+    leanPosterior: leanPosterior, makeRng: makeRng, hashString: hashString, normInv: normInv,
+    confirmedPass: confirmedPass, confirmFrom: CONFIRM_FROM, boundZ: BOUND_Z
   };
 });

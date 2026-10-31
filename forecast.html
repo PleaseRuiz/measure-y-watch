@@ -76,6 +76,8 @@ a{color:var(--accent)}
 @media (min-width:900px){.needle-card{padding:30px 36px 28px}}
 /* Stick only when the whole card fits on screen. */
 @media (min-width:900px) and (min-height:920px){.needle-card{position:sticky;top:16px}}
+/* With the extra edition up the card is taller (about 910 px on a wide screen), so it sticks only when it still fits. */
+@media (min-width:900px) and (max-height:959px){.needle-card:has(.gauge.news:not(.news-final)){position:static}}
 .needle-title{margin:0;font-size:13px;letter-spacing:.14em;font-weight:700;color:var(--muted);text-transform:uppercase}
 .needle-sub{margin:6px 0 0;max-width:30em;font-size:15px;line-height:1.35;color:var(--ink-2);text-wrap:balance}
 .needle-sub b{color:var(--ink);font-weight:800}
@@ -107,8 +109,11 @@ a{color:var(--accent)}
 .take{margin:12px 0 0;max-width:460px;font-size:15px;color:var(--ink-2)}
 .needle-foot{margin-top:16px;display:flex;justify-content:center}
 .needle-foot .chip-btn[hidden]{display:inline-flex;visibility:hidden}
-.chip-btn{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--ink-2);font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
-.chip-btn:hover{border-color:var(--muted)}
+/* The Confetti chip sits in the header, next to the pill, so the control that stops the confetti is on the first
+   screen while it falls (WCAG 2.2.2). It shows only during a celebration (js/party.js). */
+.top-meta .chip-btn[hidden]{display:none}
+.chip-btn{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--muted);background:var(--card);color:var(--ink-2);font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
+.chip-btn:hover{border-color:var(--ink-2)}
 .chip-btn .state{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.06em;color:var(--muted)}
 .peanut-tilt{transition:transform .3s cubic-bezier(.25,.8,.35,1)}
 
@@ -126,9 +131,10 @@ a{color:var(--accent)}
 @keyframes twitch{0%,80%,100%{transform:rotate(0)}88%{transform:rotate(8deg)}}
 .pn-zzz text{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;fill:var(--muted)}
 .pn-eyes{transition:transform .3s ease}
-/* The party hat: only while Measure Y has something to celebrate (see the celebration script). */
+/* The party hat: only while Measure Y has something to celebrate (see the celebration script). It bobs
+   twice and settles, so nothing keeps moving on its own. */
 .pn-hat{display:none}
-.party .pn-hat{display:inline;transform-origin:100px 40px;animation:hatbob 1.8s ease-in-out infinite}
+.party .pn-hat{display:inline;transform-origin:100px 40px;animation:hatbob 1.8s ease-in-out 2 both}
 .party.mood-final .pn-open{display:inline}
 .party.mood-final .pn-closed,.party.mood-final .pn-zzz{display:none}
 @keyframes hatbob{0%,100%{transform:rotate(6deg)}50%{transform:rotate(14deg)}}
@@ -206,6 +212,68 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   .pn-ear-l{animation:none !important}
   .party .pn-hat{animation:none;transform:rotate(10deg)}
 }
+/* news:css start */
+/* The Daily Peanut: while Measure Y is confirmed to pass or certified as passed (class "news" on #gauge, plus
+   "news-final" for the certified edition and "news-sample" for made-up numbers), Peanut grows into the hero of
+   the card and holds a front page up over the gauge. The needle stays pinned at YES behind it. The newsprint
+   stays light in both themes. */
+:root{--np-paper:#F5F0E3;--np-back:#E7DECB;--np-edge:#C9BB9B;--np-crease:#C2B595;--np-ink:#1D1A16;--np-shadow:rgba(17,20,24,.16);--np-stamp:#B3261E}
+@media (prefers-color-scheme: dark){:root{--np-paper:#EEE7D7;--np-back:#CDBFA2;--np-edge:#FFF9EC;--np-shadow:rgba(0,0,0,.6)}}
+/* Room above the arc for the page: 10% of the gauge's width, which is 10 of its 400 units. */
+.gauge.news{margin-top:calc(4px + 10%)}
+.pn-news,.pn-grin,.pn-cheeks,.pn-tie,.np-ed-final,.np-stamp{display:none}
+.news .pn-news,.news .pn-grin,.news .pn-cheeks{display:inline}
+.news-final .pn-tie,.news-final .np-ed-final{display:inline}
+.news-final .np-ed-extra{display:none}
+.news-sample .np-stamp{display:inline}
+.news .pn-paws,.news .pn-closed,.news .pn-zzz,.news .pn-lids,.news .pn-brows{display:none}
+.news .pn-open{display:inline}
+.news .pn-eyes{transform:translate(0,-1.5px)}
+/* Peanut scales up about a point at his chin, so the zone label under the gauge keeps its place. */
+.pn-hero{transform-box:view-box;transform-origin:200px 262px}
+.news .pn-hero{transform:scale(1.5)}
+.np-paper{fill:var(--np-paper);stroke:var(--np-edge);stroke-width:.5;stroke-linejoin:round}
+.np-shadow{fill:var(--np-shadow)}
+.np-back{fill:var(--np-back);stroke:var(--np-edge);stroke-width:.4;stroke-linejoin:round}
+.np-ink,.np-box{fill:var(--np-ink)}
+.np-ed{fill:var(--np-paper)}
+.np-rule{stroke:var(--np-ink);fill:none}
+.np-frame{fill:none;stroke:var(--np-ink);stroke-width:.5}
+.np-date,.np-sub,.np-kick,.np-big,.np-small,.np-body,.np-by,.np-stamp text{font-size:10px;fill:var(--np-ink)}
+.np-date,.np-by{font-family:Georgia,"Times New Roman",Times,serif;font-weight:700;letter-spacing:.07em}
+.np-sub{font-family:Georgia,"Times New Roman",Times,serif;font-style:italic;font-weight:700}
+.np-body{font-family:Georgia,"Times New Roman",Times,serif}
+.np-kick,.np-big,.np-small{font-family:"Schibsted Grotesk",system-ui,sans-serif;font-weight:800}
+.np-kick,.np-small{letter-spacing:.04em}
+.np-stamp rect{fill:rgba(245,240,227,.84);stroke:var(--np-stamp);stroke-width:1.4}
+.np-stamp text{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:800;letter-spacing:.18em;fill:var(--np-stamp)}
+.np-arm{fill:var(--pn-fur);stroke:var(--pn-curl);stroke-width:1.2;stroke-linejoin:round;paint-order:stroke}
+.np-curls{fill:none;stroke:var(--pn-curl);stroke-width:1.1;stroke-linecap:round;opacity:.6}
+.np-paw{fill:var(--pn-fur);stroke:var(--pn-curl);stroke-width:1}
+.np-toes{fill:none;stroke:var(--pn-curl);stroke-width:1.2;stroke-linecap:round}
+.np-toe{fill:none;stroke:var(--pn-fur);stroke-width:5.8;stroke-linecap:round}
+.np-toe-edge{fill:none;stroke:var(--pn-curl);stroke-width:8;stroke-linecap:round}
+.np-crease{fill:none;stroke:var(--np-crease);stroke-width:.5;stroke-linecap:round}
+.np-flash{opacity:0}
+.np-star{fill:#fff;stroke:#E9A51F;stroke-width:.7;stroke-linejoin:round}
+/* Motion, all within 3.6 s: the page pops up from behind Peanut as he grows, a camera flash glints at its corner,
+   the hat bobs twice and settles, the pointing toe taps three times. Nothing moves for readers who asked for less
+   motion: the finished picture simply shows. */
+.news .pn-news{transform-box:view-box;transform-origin:200px 180px;animation:np-up .7s cubic-bezier(.2,1.12,.4,1) both}
+@keyframes np-up{from{transform:translateY(60px) scale(.5);opacity:0}to{transform:none;opacity:1}}
+.news .pn-hero{animation:np-grow .7s cubic-bezier(.2,1.12,.4,1) both}
+@keyframes np-grow{from{transform:scale(1)}to{transform:scale(1.5)}}
+.news .pn-hat{display:inline;animation:np-hat 1.8s ease-in-out 2 forwards}
+@keyframes np-hat{0%,100%{transform:rotate(28deg)}50%{transform:rotate(34deg)}}
+.news .np-point{animation:np-tap .42s ease-in-out .8s 3}
+@keyframes np-tap{50%{transform:translateY(-1.6px)}}
+.news .np-flash{transform-box:fill-box;transform-origin:center;animation:np-flash .75s ease-out .55s both}
+@keyframes np-flash{0%{opacity:0;transform:scale(.2)}40%{opacity:1;transform:scale(1.15) rotate(15deg)}100%{opacity:0;transform:scale(.4) rotate(35deg)}}
+@media (prefers-reduced-motion: reduce){
+  .news .pn-news,.news .pn-hero,.news .np-point,.news .np-flash{animation:none}
+  .news .pn-hat{animation:none;transform:rotate(30deg)}
+}
+/* news:css end */
 </style>
 </head>
 <body>
@@ -217,6 +285,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     </div>
     <div class="top-meta">
       <span class="pill mono fun" id="pill"><span class="dot" aria-hidden="true"></span><span id="pillText">Forecast · just for fun</span></span>
+      <button type="button" class="chip-btn" id="confettiBtn" aria-pressed="true" hidden>Confetti <span class="state">ON</span></button>
       <span class="updated" id="updated"></span>
     </div>
   </header>
@@ -241,6 +310,58 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
         <text class="gauge-end" x="370" y="252" text-anchor="middle">YES</text>
         <g class="pointer" id="pointer"><line x1="200" y1="225" x2="200" y2="89"/></g>
         <circle class="hub-ring" cx="200" cy="225" r="56"/>
+        <defs><radialGradient id="npFlash"><stop offset="0" stop-color="#F2B33D" stop-opacity=".75"/><stop offset="1" stop-color="#F2B33D" stop-opacity="0"/></radialGradient></defs>
+        <!-- news:svg start -->
+        <g class="pn-news" id="pnNews" aria-hidden="true">
+          <g class="np-legs">
+            <path class="np-arm" d="M158.65 208.05L155.33 203.32L152.09 198.52L148.93 193.63L145.85 188.67L142.86 183.63L139.95 178.51L137.12 173.32L134.37 168.05L131.71 162.69L129.13 157.26L126.63 151.75L124.22 146.16L121.89 140.5L119.64 134.75L117.48 128.92L115.4 123.02L113.41 117.03L111.5 110.96L109.68 104.82L107.94 98.6L106.28 92.29L104.72 85.91L103.23 79.44L101.84 72.9L100.52 66.28L99.3 59.58A7.5 7.5 0 0 1 84.48 61.92L84.48 61.92L85.52 68.87L86.64 75.76L87.86 82.57L89.16 89.32L90.56 95.99L92.05 102.6L93.63 109.13L95.3 115.6L97.07 121.99L98.93 128.32L100.88 134.58L102.92 140.76L105.06 146.88L107.29 152.92L109.61 158.9L112.02 164.8L114.53 170.64L117.14 176.4L119.83 182.1L122.62 187.72L125.51 193.27L128.49 198.75L131.56 204.16L134.73 209.49L137.99 214.76L141.35 219.95A10.5 10.5 0 0 1 158.65 208.05Z"/><path class="np-arm" d="M258.78 219.76L261.9 214.76L264.96 209.82L267.94 204.94L270.84 200.11L273.67 195.34L276.43 190.64L279.11 185.99L281.72 181.4L284.26 176.86L286.72 172.39L289.11 167.98L291.43 163.62L293.67 159.32L295.84 155.08L297.93 150.9L299.95 146.77L301.9 142.7L303.77 138.7L305.57 134.75L307.3 130.85L308.95 127.02L310.53 123.24L312.03 119.52L313.46 115.86L314.81 112.26L316.09 108.71A7.5 7.5 0 0 1 302.11 103.28L302.11 103.28L300.69 106.56L299.19 109.9L297.62 113.31L295.98 116.77L294.26 120.3L292.47 123.88L290.6 127.53L288.67 131.24L286.66 135.01L284.57 138.83L282.42 142.72L280.18 146.67L277.88 150.68L275.5 154.75L273.05 158.87L270.53 163.06L267.93 167.31L265.25 171.62L262.51 175.99L259.69 180.42L256.79 184.9L253.83 189.45L250.79 194.06L247.67 198.73L244.48 203.45L241.22 208.24A10.5 10.5 0 0 1 258.78 219.76Z"/>
+            <path class="np-curls" d="M125.42 178.6q3 -4 6 -1M267.86 181.9q3 -4 6 -1"/>
+          </g>
+          <g class="np-page" transform="rotate(-2 200 62)">
+            <path class="np-shadow" d="M93.6 -23.6H309.6V152.4H93.6Z"/>
+            <path class="np-back" d="M93.2 -24.6H309.2V151.4H93.2Z"/>
+            <path class="np-paper" d="M92 -26H308V150H92Z"/>
+            <rect class="np-frame" x="98" y="-22" width="26" height="20"/>
+            <g class="np-ink"><g transform="translate(111 -11.6) scale(1.3)"><ellipse cx="0" cy="2.2" rx="3.1" ry="2.5"/><ellipse cx="-3.6" cy="-1.2" rx="1.25" ry="1.6" transform="rotate(-18 -3.6 -1.2)"/><ellipse cx="-1.3" cy="-3.1" rx="1.3" ry="1.7"/><ellipse cx="1.3" cy="-3.1" rx="1.3" ry="1.7"/><ellipse cx="3.6" cy="-1.2" rx="1.25" ry="1.6" transform="rotate(18 3.6 -1.2)"/></g></g>
+            <path class="np-ink" d="M137 -16.5L137.2 -17.2 137.4 -17.8 137.8 -18.2 139.9 -19.9 139.5 -19.5 139.2 -18.9 139.1 -18.3ZM139.9 -19.9L140.4 -20.3 141 -20.6 141.7 -20.7 142.4 -20.8 143.1 -20.7 143.9 -20.6 144.7 -20.4 145.5 -20.2 146.2 -20 146.9 -19.9 147.6 -19.9 148.2 -19.9 148.9 -20.1 149.6 -20.3 150.2 -20.6 150.9 -21 151.5 -21.5 149.4 -19.8 148.8 -19.2 148.1 -18.8 147.5 -18.5 146.8 -18.3 146.2 -18.2 145.5 -18.2 144.8 -18.2 144.1 -18.3 143.4 -18.5 142.7 -18.7 141.9 -18.9 141.1 -19 140.3 -19 139.6 -19 138.9 -18.8 138.3 -18.6 137.8 -18.2ZM145.6 -19.9L145.2 -18.9 144.8 -17.9 144.6 -16.9 144.3 -15.8 144.1 -14.6 144 -13.5 143.9 -12.3 143.9 -11.1 143.9 -9.9 143.9 -8.8 143.9 -6.3 144.7 -5.3 142.7 -3.6 141.9 -4.6 141.9 -7.1 141.8 -8.2 141.8 -9.4 141.8 -10.6 141.9 -11.7 142.1 -12.9 142.3 -14 142.5 -15.1 142.8 -16.2 143.1 -17.2 143.5 -18.1ZM146.1 -16.8L146.1 -7.6 145.6 -7.2 145.6 -16.4ZM138.3 -17.6L138.2 -17 138.1 -16.5 138.1 -16.1 138.2 -15.7 138.4 -15.3 138.6 -15 138.9 -14.8 139.2 -14.6 139.5 -14.6 139.9 -14.6 139.4 -14.2 139 -14.2 138.7 -14.2 138.4 -14.4 138.1 -14.6 137.9 -14.9 137.7 -15.2 137.6 -15.7 137.6 -16.1 137.7 -16.6 137.8 -17.2ZM151.8 -22L152.6 -21 152.6 -6.3 153.4 -5.3 151.4 -3.6 150.6 -4.6 150.6 -19.3 149.8 -20.2ZM153.2 -14.2L156 -15.8 156.8 -14.8 156.8 -6.3 157.6 -5.3 155.6 -3.6 154.8 -4.6 154.8 -13.1 154 -14 151.1 -12.5ZM160.7 -15.8L161.5 -14.8 161.5 -5.3 162.3 -5.3 164.9 -6.2 162.8 -4.5 160.2 -3.6 159.4 -3.6 159.4 -13.1 158.6 -14ZM161.5 -14.8L163.5 -15.8 164.7 -14.3 164.7 -12 162.7 -10.3 162.7 -12.6 161.4 -14 159.4 -13.1ZM163.5 -10.8L160.4 -9.7 161.6 -10.7 164.7 -11.8ZM172.4 -20.9L173.2 -19.9 173.2 -6.3 174 -5.3 171.9 -3.6 171.1 -4.6 171.1 -18.2 170.3 -19.2ZM173.2 -20.6L174.6 -20.9 176 -21 177.3 -20.8 178.4 -20.3 179.4 -19.7 180.2 -18.8 180.9 -17.7 181.4 -16.5 181.7 -15 181.8 -13.4 181.7 -11.7 181.5 -10.2 181 -8.9 180.5 -7.7 179.7 -6.8 178.8 -6 176.8 -4.3 177.6 -5 178.4 -6 179 -7.1 179.4 -8.4 179.6 -10 179.7 -11.7 179.6 -13.3 179.3 -14.7 178.8 -16 178.2 -17.1 177.3 -17.9 176.4 -18.6 175.2 -19 174 -19.2 172.6 -19.2 171.1 -18.9ZM176.8 -4.3L175.7 -3.7 174.6 -3.4 173.3 -3.2 171.9 -3.3 174 -5 175.4 -5 176.7 -5.1 177.8 -5.5 178.8 -6ZM176.4 -17.3L176.4 -7.1 175.9 -6.6 175.9 -16.9ZM170.8 -16.9L170.3 -16.7 169.9 -16.4 170.3 -16.8 170.8 -17.1 171.3 -17.3ZM170.3 -16.8L170 -16.4 169.8 -15.9 169.7 -15.4 169.6 -15 169.7 -14.5 169.9 -14.1 170.1 -13.8 170.5 -13.5 170 -13.1 169.6 -13.3 169.4 -13.7 169.2 -14.1 169.1 -14.5 169.2 -15 169.3 -15.5 169.5 -16 169.9 -16.4ZM183.4 -12.5L184.5 -14 186.6 -15.8 185.5 -14.2ZM186.6 -15.8L189.2 -15.8 189.4 -14.8 189.4 -6.3 190.2 -5.3 188.2 -3.6 187.4 -4.6 187.4 -13.1 187.1 -14 184.5 -14ZM187.1 -10.6L184 -8.9 186.1 -10.7 189.2 -12.3ZM186.1 -10.7L186.1 -6.3 186.9 -5.3 189.2 -6.4 187.1 -4.6 184.8 -3.6 184 -4.6 184 -8.9ZM193.1 -15.8L193.9 -14.8 193.9 -6.3 194.7 -5.3 192.7 -3.6 191.9 -4.6 191.9 -13.1 191.1 -14ZM193.4 -20.1L194.5 -19.4 192.5 -17.7 191.3 -18.4ZM197.8 -22L198.6 -21 198.6 -6.3 199.4 -5.3 197.3 -3.6 196.5 -4.6 196.5 -19.3 195.7 -20.2ZM202.4 -15.8L203.2 -14.8 203.2 -6.3 204 -5.3 207.2 -6.9 205.1 -5.2 202 -3.6 201.2 -4.6 201.2 -13.1 200.4 -14ZM206.6 -15.8L207.4 -14.8 207.4 -2.3 207.4 -1.8 207.3 -1.3 207.2 -0.9 206.9 -0.6 206.7 -0.3 204.6 1.5 204.9 1.2 205.1 0.8 205.2 0.4 205.3 0 205.4 -0.6 205.4 -13.1 204.6 -14ZM204.6 1.5L204.3 1.7 203.9 1.8 203.4 1.9 202.9 1.9 202.4 1.9 204.5 0.1 205 0.2 205.5 0.2 205.9 0.1 206.3 -0.1 206.7 -0.3ZM203.1 1.3L201.8 0.2 202.4 -0.3 203.7 0.7ZM216.2 -20.9L217 -19.9 217 -5.2 217.7 -4.3 215.7 -2.5 214.9 -3.5 214.9 -18.2 214.1 -19.2ZM217 -20.6L218.3 -21 219.5 -21.1 220.6 -21.1 221.6 -20.8 222.5 -20.3 223.2 -19.8 223.8 -19 224.2 -18.2 224.4 -17.3 224.5 -16.4 224.4 -15.4 224.2 -14.6 223.9 -13.9 223.4 -13.4 221.3 -11.6 221.8 -12.2 222.2 -12.9 222.4 -13.7 222.4 -14.6 222.4 -15.6 222.1 -16.5 221.7 -17.3 221.1 -18 220.4 -18.6 219.5 -19.1 218.5 -19.3 217.4 -19.4 216.2 -19.3 214.9 -18.9ZM221.3 -11.6L220.7 -11.1 219.9 -10.8 219 -10.5 217.9 -10.3 216.7 -10.3 215.4 -10.3 217.5 -12 218.8 -12 220 -12.1 221 -12.2 222 -12.5 222.7 -12.9 223.4 -13.4ZM219.7 -17.6L219.7 -12.7 219.2 -12.3 219.2 -17.2ZM214.6 -16.9L214.1 -16.7 213.6 -16.4 214.1 -16.8 214.6 -17.1 215.1 -17.3ZM214.1 -16.8L213.8 -16.4 213.6 -15.9 213.5 -15.4 213.4 -15 213.5 -14.5 213.7 -14.1 213.9 -13.8 214.3 -13.5 213.8 -13.1 213.4 -13.3 213.2 -13.7 213 -14.1 212.9 -14.5 213 -15 213.1 -15.5 213.3 -16 213.6 -16.4ZM227 -15.8L227.8 -14.8 227.8 -5.3 228.6 -5.3 231.2 -6.2 229.1 -4.5 226.5 -3.6 225.7 -3.6 225.7 -13.1 224.9 -14ZM227.8 -14.8L229.8 -15.8 231.1 -14.3 231.1 -12 229 -10.3 229 -12.6 227.8 -14 225.7 -13.1ZM229.9 -10.8L226.8 -9.7 227.9 -10.7 231 -11.8ZM232.2 -12.5L233.2 -14 235.3 -15.8 234.2 -14.2ZM235.3 -15.8L237.9 -15.8 238.1 -14.8 238.1 -6.3 238.9 -5.3 236.9 -3.6 236.1 -4.6 236.1 -13.1 235.8 -14 233.2 -14ZM235.8 -10.6L232.7 -8.9 234.8 -10.7 237.9 -12.3ZM234.8 -10.7L234.8 -6.3 235.6 -5.3 237.9 -6.4 235.8 -4.6 233.5 -3.6 232.7 -4.6 232.7 -8.9ZM241.9 -15.8L242.7 -14.8 242.7 -6.3 243.5 -5.3 241.4 -3.6 240.6 -4.6 240.6 -13.1 239.8 -14ZM243.2 -14.2L246 -15.8 246.8 -14.8 246.8 -6.3 247.6 -5.3 245.6 -3.6 244.8 -4.6 244.8 -13.1 244 -14 241.1 -12.5ZM250.7 -15.8L251.5 -14.8 251.5 -6.3 252.3 -5.3 255.4 -6.9 253.3 -5.2 250.2 -3.6 249.4 -4.6 249.4 -13.1 248.6 -14ZM254.9 -15.8L255.7 -14.8 255.7 -6.3 256.5 -5.3 254.4 -3.6 253.6 -4.6 253.6 -13.1 252.8 -14ZM260.6 -19.3L260.6 -6.3 261.4 -5.3 259.3 -3.6 258.5 -4.6 258.5 -17.6ZM258.9 -15.3L263 -15.3 261.6 -14.1 257.5 -14.1Z"/>
+            <rect class="np-box" x="276" y="-22" width="26" height="20" rx=".5"/>
+            <path class="np-ed np-ed-extra" fill-rule="evenodd" d="M278.84 -16H282.04V-14.64H280.36V-12.72H281.72V-11.44H280.36V-9.36H282.04V-8H278.84ZM282.4 -16H283.96L284.4 -13.52L284.84 -16H286.4L285.32 -12L286.4 -8H284.84L284.4 -10.48L283.96 -8H282.4L283.48 -12ZM286.76 -16H290.44V-14.64H289.36V-8H287.84V-14.64H286.76ZM290.8 -16H293.12C294.16 -16 294.64 -15.44 294.64 -14.32V-13.12C294.64 -12.4 294.4 -12 293.92 -11.76C294.4 -11.52 294.64 -11.12 294.64 -10.4V-8H293.12V-10.32C293.12 -10.76 292.96 -10.96 292.56 -10.96H292.32V-8H290.8ZM292.32 -14.72V-12.16H292.68C292.96 -12.16 293.12 -12.32 293.12 -12.72V-14.16C293.12 -14.56 292.96 -14.72 292.68 -14.72ZM295 -8L295.96 -16H298.2L299.16 -8H297.72L297.58 -9.44H296.58L296.44 -8ZM296.73 -10.72H297.43L297.13 -14.24H297.03Z"/><path class="np-ed np-ed-final" fill-rule="evenodd" d="M280.36 -16H283.48V-14.64H281.88V-12.64H283.16V-11.36H281.88V-8H280.36ZM283.84 -16H285.36V-8H283.84ZM285.72 -16H287.16L288.28 -11.52V-16H289.72V-8H288.28L287.16 -12.48V-8H285.72ZM290.08 -8L291.04 -16H293.28L294.24 -8H292.8L292.66 -9.44H291.66L291.52 -8ZM291.81 -10.72H292.51L292.21 -14.24H292.11ZM294.6 -16H296.12V-9.36H297.64V-8H294.6Z"/>
+            <path class="np-rule" d="M98 3H302" stroke-width="1.2"/>
+            <path class="np-rule" d="M98 4.8H302M98 12.3H302" stroke-width=".4"/>
+            <text class="np-date" transform="translate(98 9.6) scale(0.41 0.41)" data-sz="4.1">BELMONT, CALIF.</text>
+            <text class="np-date" id="newsDate" transform="translate(200 9.6) scale(0.41 0.41)" text-anchor="middle" data-w="114.24" data-sz="4.1"></text>
+            <text class="np-date" transform="translate(302 9.6) scale(0.41 0.41)" text-anchor="end" data-sz="4.1">ONE BISCUIT</text>
+            <path class="np-ink" fill-rule="evenodd" d="M98 44.77V17.3H103.77L106.24 32.14L108.72 17.3H114.48V44.77H109.81V28.84L107.48 40.93H105.01L102.67 28.84V44.77ZM115.72 17.3H126.71V21.97H120.94V28.56H125.61V32.96H120.94V40.1H126.71V44.77H115.72ZM127.95 44.77L131.24 17.3H138.94L142.23 44.77H137.29L136.79 39.83H133.39L132.89 44.77ZM133.88 35.43H136.3L135.26 23.34H134.93ZM149.79 17.3C154.19 17.3 156.11 19.5 156.11 23.34V26.37H151.16V23.34C151.16 22.38 150.72 21.83 149.79 21.83C148.86 21.83 148.42 22.38 148.42 23.34C148.42 24.72 149.24 25.54 151.44 27.19C155.01 29.66 156.11 31.59 156.11 35.43V38.46C156.11 42.58 153.91 44.77 149.79 44.77C145.67 44.77 143.47 42.58 143.47 38.46V35.16H148.42V38.73C148.42 39.69 148.86 40.24 149.79 40.24C150.72 40.24 151.16 39.69 151.16 38.73C151.16 36.94 150.34 35.85 148.14 34.33C144.57 31.86 143.47 29.94 143.47 26.64V23.62C143.47 19.5 145.67 17.3 149.79 17.3ZM157.35 17.3H162.57V39.28C162.57 40.1 162.98 40.52 163.8 40.52C164.63 40.52 165.04 40.1 165.04 39.28V17.3H170.26V38.73C170.26 42.85 168.06 44.77 163.8 44.77C159.54 44.77 157.35 42.85 157.35 38.73ZM171.49 17.3H179.46C183.03 17.3 184.68 19.22 184.68 23.07V27.19C184.68 29.66 183.86 31.04 182.21 31.86C183.86 32.69 184.68 34.06 184.68 36.53V44.77H179.46V36.81C179.46 35.3 178.91 34.61 177.54 34.61H176.72V44.77H171.49ZM176.72 21.7V30.49H177.95C178.91 30.49 179.46 29.94 179.46 28.56V23.62C179.46 22.25 178.91 21.7 177.95 21.7ZM185.92 17.3H196.91V21.97H191.14V28.56H195.81V32.96H191.14V40.1H196.91V44.77H185.92ZM201.58 17.3H206.94L208.45 27.19L209.96 17.3H215.32L211.2 33.78V44.77H205.7V33.78ZM219.99 17.3H227.68C230.98 17.3 232.63 19.22 232.63 22.79V29.11C232.63 32.69 230.98 34.61 227.68 34.61H225.21V44.77H219.99ZM225.21 21.7V30.21H226.17C227.13 30.21 227.54 29.66 227.54 28.56V23.34C227.54 22.25 227.13 21.7 226.17 21.7ZM233.86 44.77L237.16 17.3H244.85L248.15 44.77H243.2L242.71 39.83H239.3L238.81 44.77ZM239.8 35.43H242.21L241.17 23.34H240.84ZM255.71 17.3C260.1 17.3 262.02 19.5 262.02 23.34V26.37H257.08V23.34C257.08 22.38 256.64 21.83 255.71 21.83C254.77 21.83 254.33 22.38 254.33 23.34C254.33 24.72 255.16 25.54 257.35 27.19C260.93 29.66 262.02 31.59 262.02 35.43V38.46C262.02 42.58 259.83 44.77 255.71 44.77C251.58 44.77 249.39 42.58 249.39 38.46V35.16H254.33V38.73C254.33 39.69 254.77 40.24 255.71 40.24C256.64 40.24 257.08 39.69 257.08 38.73C257.08 36.94 256.25 35.85 254.06 34.33C250.48 31.86 249.39 29.94 249.39 26.64V23.62C249.39 19.5 251.58 17.3 255.71 17.3ZM269.58 17.3C273.98 17.3 275.9 19.5 275.9 23.34V26.37H270.95V23.34C270.95 22.38 270.51 21.83 269.58 21.83C268.65 21.83 268.21 22.38 268.21 23.34C268.21 24.72 269.03 25.54 271.23 27.19C274.8 29.66 275.9 31.59 275.9 35.43V38.46C275.9 42.58 273.7 44.77 269.58 44.77C265.46 44.77 263.26 42.58 263.26 38.46V35.16H268.21V38.73C268.21 39.69 268.65 40.24 269.58 40.24C270.51 40.24 270.95 39.69 270.95 38.73C270.95 36.94 270.13 35.85 267.93 34.33C264.36 31.86 263.26 29.94 263.26 26.64V23.62C263.26 19.5 265.46 17.3 269.58 17.3ZM277.14 17.3H288.13V21.97H282.36V28.56H287.03V32.96H282.36V40.1H288.13V44.77H277.14ZM295.68 17.3C300.08 17.3 302 19.5 302 23.34V26.37H297.05V23.34C297.05 22.38 296.61 21.83 295.68 21.83C294.75 21.83 294.31 22.38 294.31 23.34C294.31 24.72 295.13 25.54 297.33 27.19C300.9 29.66 302 31.59 302 35.43V38.46C302 42.58 299.8 44.77 295.68 44.77C291.56 44.77 289.36 42.58 289.36 38.46V35.16H294.31V38.73C294.31 39.69 294.75 40.24 295.68 40.24C296.61 40.24 297.05 39.69 297.05 38.73C297.05 36.94 296.23 35.85 294.03 34.33C290.46 31.86 289.36 29.94 289.36 26.64V23.62C289.36 19.5 291.56 17.3 295.68 17.3Z"/>
+            <text class="np-sub" id="newsSub" transform="translate(200 55.37) scale(0.86 0.86)" text-anchor="middle" data-w="204" data-sz="8.6"></text>
+            <path class="np-rule" d="M98 59.37H302" stroke-width=".5"/>
+            <path class="np-rule" d="M164.77 62.77V145M235.23 62.77V145" stroke-width=".35"/>
+            <g class="np-col" data-col="0" data-x="98" data-w="63.07"><text class="np-kick" id="newsKick0" transform="translate(129.53 70) scale(0.756 0.9)" text-anchor="middle" data-w="63.07" data-sz="9" data-cd="0.84"></text><text class="np-big" id="newsBig0" transform="translate(129.53 88.8) scale(1.93 2.3)" text-anchor="middle" data-w="63.07" data-sz="23" data-cd="0.84"></text><text class="np-small" id="newsSmall0" transform="translate(129.53 96.4) scale(0.588 0.7)" text-anchor="middle" data-w="63.07" data-sz="7" data-cd="0.84"></text><path class="np-rule" d="M118.53 99.4h22" stroke-width=".4"/><g class="np-story" transform="translate(98 105.8) scale(0.5)" data-step="12" data-lines="6" data-w="126.13"></g></g>
+            <g class="np-col" data-col="1" data-x="168.47" data-w="63.07"><text class="np-kick" id="newsKick1" transform="translate(200 70) scale(0.756 0.9)" text-anchor="middle" data-w="63.07" data-sz="9" data-cd="0.84"></text><text class="np-big" id="newsBig1" transform="translate(200 88.8) scale(1.93 2.3)" text-anchor="middle" data-w="63.07" data-sz="23" data-cd="0.84"></text><text class="np-small" id="newsSmall1" transform="translate(200 96.4) scale(0.588 0.7)" text-anchor="middle" data-w="63.07" data-sz="7" data-cd="0.84"></text><path class="np-rule" d="M189 99.4h22" stroke-width=".4"/><g class="np-story" transform="translate(168.47 105.8) scale(0.5)" data-step="12" data-lines="6" data-w="126.13"></g></g>
+            <g class="np-col" data-col="2" data-x="238.93" data-w="63.07"><text class="np-kick" id="newsKick2" transform="translate(270.47 70) scale(0.756 0.9)" text-anchor="middle" data-w="63.07" data-sz="9" data-cd="0.84"></text><text class="np-big" id="newsBig2" transform="translate(270.47 88.8) scale(1.93 2.3)" text-anchor="middle" data-w="63.07" data-sz="23" data-cd="0.84"></text><text class="np-small" id="newsSmall2" transform="translate(270.47 96.4) scale(0.588 0.7)" text-anchor="middle" data-w="63.07" data-sz="7" data-cd="0.84"></text><path class="np-rule" d="M259.47 99.4h22" stroke-width=".4"/><g class="np-story" transform="translate(238.93 105.8) scale(0.5)" data-step="12" data-lines="6" data-w="126.13"></g></g>
+            <path class="np-crease" d="M298.5 100.27l-9 -3.8M298 118.77l-9.5 3.2"/>
+            <g class="np-stamp" transform="translate(152 130.77) rotate(-12)">
+              <rect x="-37" y="-9.5" width="74" height="19" rx="2.2"/>
+              <text transform="translate(2.4 4.6) scale(1.3)" text-anchor="middle">SAMPLE</text>
+            </g>
+          </g>
+          <g class="np-paws" transform="rotate(-2 200 62)">
+            <g transform="translate(307.5 109.77)">
+              <ellipse class="np-paw" cx="0" cy="0" rx="9.6" ry="10.8"/>
+              <path class="np-toes" d="M-2 -6.8h-6M-3.2 -0.8h-6.2M-2 5.2h-6"/>
+            </g>
+            <g transform="translate(90.5 55.5) rotate(46.47)"><g class="np-point">
+              <path class="np-toe-edge" d="M0 -2V-22.07"/><path class="np-toe" d="M0 -2V-22.07"/>
+              <ellipse class="np-paw" cx="0" cy="0" rx="10.4" ry="9.2"/>
+              <path class="np-toes" d="M-5.6 -5.6v4M5.6 -5.6v4"/>
+            </g></g>
+          </g>
+          <g transform="translate(93 -21)"><g class="np-flash">
+            <circle r="13" fill="url(#npFlash)"/>
+            <path class="np-star" d="M0 -9.5 1 -1 9.5 0 1 1 0 9.5 -1 1 -9.5 0 -1 -1z"/>
+          </g></g>
+        </g>
+        <!-- news:svg end -->
+        <g class="pn-hero" id="pnHero">
         <g class="peanut-tilt" id="peanutTilt" style="transform-box:view-box;transform-origin:200px 225px">
           <svg x="145" y="166" width="110" height="110" viewBox="0 0 200 200" overflow="visible" aria-hidden="true">
             <g class="pn-ear pn-ear-l" fill="var(--pn-ear)">
@@ -289,6 +410,14 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
             <path d="M90 121 q10 -7 20 0 q-1 9 -10 12 q-9 -3 -10 -12z" fill="var(--pn-ink)"/>
             <ellipse cx="96" cy="121" rx="3" ry="1.8" fill="#fff" opacity=".5"/>
             <path d="M100 133 v6 M100 139 q-7 7 -13 1 M100 139 q7 7 13 1" fill="none" stroke="var(--pn-ink)" stroke-width="2.4" stroke-linecap="round"/>
+            <!-- news:face start -->
+            <g class="pn-cheeks"><ellipse cx="66" cy="126" rx="8" ry="5" fill="#F08F86" opacity=".38"/><ellipse cx="134" cy="126" rx="8" ry="5" fill="#F08F86" opacity=".38"/></g>
+            <g class="pn-grin">
+              <path d="M83.5 136.5 Q100 141.5 116.5 136.5 Q115 156 100 157.5 Q85 156 83.5 136.5Z" fill="var(--pn-ink)"/>
+              <path d="M90.5 150.8 Q100 143.5 109.5 150.8 Q108 157 100 157.3 Q92 157 90.5 150.8Z" fill="#E8798A"/>
+            </g>
+            <g class="pn-tie"><path d="M100 171 l-13 -6.5 v13 z M100 171 l13 -6.5 v13 z" fill="#1D1A16"/><rect x="-3" y="-3.4" width="6" height="6.8" rx="1.2" transform="translate(100 171)" fill="#3A302A"/></g>
+            <!-- news:face end -->
             <g class="pn-paws">
               <ellipse cx="78" cy="180" rx="17" ry="12" fill="var(--pn-fur)"/><ellipse cx="122" cy="180" rx="17" ry="12" fill="var(--pn-fur)"/>
               <path d="M72 186 v-6 M78 187 v-7 M84 186 v-6 M116 186 v-6 M122 187 v-7 M128 186 v-6" stroke="var(--pn-curl)" stroke-width="2" stroke-linecap="round"/>
@@ -296,9 +425,10 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
             <g class="pn-zzz"><text x="146" y="44" font-size="34">z</text><text x="170" y="22" font-size="24">z</text></g>
           </svg>
         </g>
+        </g>
       </svg>
       </div>
-      <p class="zone mono" id="zone">Loading</p>
+      <p class="zone mono" id="zone" tabindex="-1">Loading</p>
       <div class="hero" aria-live="polite">
         <span class="hero-num" id="heroNum">–</span>
         <span class="hero-label" id="heroLabel">chance Measure Y passes</span>
@@ -361,6 +491,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
       <h3>What the zones mean</h3>
       <p>Tossup: a 40 to 60% chance. Leans YES: 61 to 75% (Leans NO: 25 to 39%). Likely YES: 76 to 95% (Likely NO: 5 to 24%). Very likely YES: 96% or more (Very likely NO: 4% or less). Even "Likely" is far from certain: at 80%, Measure Y would still fail about 1 time in 5.</p>
 
+      <h3 id="call">When Peanut calls it</h3>
+      <p>Peanut confirms that Measure Y passes only on county updates from Thu, Nov 5 on, and only when YES leads by more than Peanut's worst case for the votes still out: 4.5 standard deviations above its turnout estimate, the "at most" figure on this page. Then YES wins even if every one of those votes is a NO, so the call doesn't depend on how the last ballots lean, only on Peanut's estimate of how many are left. That is what "a mathematical certainty under Peanut's methodology" means, and the certainty is only as good as that estimate. In 3,200 made-up elections, including 1,000 that were 1.6 times as uncertain as Peanut assumes and 600 where the county counted 7 points slower than usual, Peanut made a call in 782 and never called one wrong. But when the county counted slower, more votes were really left than Peanut's "at most" in about one call in four (45 of 166), and in 6 of those every remaining vote being a NO would have sunk YES; those calls were right only because late ballots never break all one way. Peanut has no post-election report history from past measures, so the bound is untested on real late counts; on 32 early counts from 23 past San Mateo County measures, all but one from election night, it was at least 1.4 times the votes really left, and Peanut would not have called any of them. It usually calls a win of 60% YES or more by the Mon, Nov 16 update, about six in ten of 55 to 60% wins by then, and closer wins usually not before the county certifies. On certification day Peanut still allows for a little over 2% more votes than the count shows, so a small lead on a complete count is not called either. Only the county's certification is official. If the county counted slower than in recent elections, more votes could be left than Peanut thinks.</p>
+
       <h3 id="wobble">The wobble</h3>
       <p>On the Live count tab the wobble is just for fun. Here it means something. Peanut reruns the forecast 96 times with its assumptions (how the uncounted ballots lean, how fast the county counts, how many people vote) spread across their own uncertainty, and the needle wanders across the middle half of the chances that come out. The number on the needle already averages over all of these; the wobble shows how much it would move if Peanut's starting assumptions were off. A wide wobble means the chance itself depends a lot on assumptions; when the outcome no longer depends on them, the needle sits still. The button under the needle turns it off.</p>
 
@@ -422,6 +555,27 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 
   var params = new URLSearchParams(location.search);
   var DEMO = params.get('demo') === '1';
+  // Previews on made-up numbers: ?demo=1&party=1 shows Measure Y confirmed to pass (on a Mon Nov 16 count) and
+  // ?demo=1&party=final the county certifying a pass. The forecast runs on them as on real numbers, so the needle
+  // really sits at YES, and the front page carries a SAMPLE stamp.
+  var PARTY_PREVIEW = DEMO && /^(1|final)$/.test(params.get('party') || '') ? params.get('party') : null;
+  if (PARTY_PREVIEW) SAMPLE = (function () {
+    var h = PARTY_PREVIEW === 'final' ? [
+      ['2026-11-03T20:12:00-08:00', 3354, 3096], ['2026-11-03T21:03:00-08:00', 3844, 3606], ['2026-11-03T22:02:00-08:00', 4334, 4116],
+      ['2026-11-03T23:04:00-08:00', 4775, 4575], ['2026-11-05T16:26:00-08:00', 5467, 5183], ['2026-11-09T16:28:00-08:00', 5781, 5469],
+      ['2026-11-16T16:20:00-08:00', 5989, 5661], ['2026-12-03T16:45:00-08:00', 6005, 5675]
+    ] : [
+      ['2026-11-03T20:12:00-08:00', 3159, 2241], ['2026-11-03T21:03:00-08:00', 3244, 2316], ['2026-11-03T22:02:00-08:00', 3329, 2391],
+      ['2026-11-03T23:04:00-08:00', 3414, 2466], ['2026-11-04T00:03:00-08:00', 3499, 2541], ['2026-11-04T01:02:00-08:00', 3584, 2616],
+      ['2026-11-04T02:01:00-08:00', 3669, 2691], ['2026-11-05T16:26:00-08:00', 4339, 3101], ['2026-11-06T16:31:00-08:00', 4761, 3359],
+      ['2026-11-09T16:28:00-08:00', 5450, 3800], ['2026-11-12T09:24:00-08:00', 5946, 4104], ['2026-11-13T16:22:00-08:00', 6221, 4279],
+      ['2026-11-16T16:20:00-08:00', 6425, 4415]
+    ];
+    var history = h.map(function (x) { return { county_updated: x[0], yes: x[1], no: x[2] }; });
+    var sample = { status: PARTY_PREVIEW === 'final' ? 'final' : 'counting', threshold: 0.5, latest: history[history.length - 1], history: history };
+    if (PARTY_PREVIEW === 'final') sample.certified_at = '2026-12-03T17:30:00-08:00'; // as the Certified run writes it; the final edition prints that date
+    return sample;
+  })();
   var REHEARSAL = params.get('rehearsal') === '1';
   if (REHEARSAL) DATA_URL = 'data/rehearsal.json';
   if (DEMO || REHEARSAL) document.querySelectorAll('a[href="./"], a[href="forecast.html"]').forEach(function (a) { a.href = a.getAttribute('href') + location.search; });
@@ -540,36 +694,245 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 
   function setMood(mood, asleep) {
     var cls = 'gauge' + (asleep ? ' asleep' : '') + (mood ? ' mood-' + mood : '') + (wobbling() ? ' wobbling' : '') +
-      (party && party.on ? ' party' : '');
+      (party && party.on ? ' party' : '') + newsClasses();
     el.gauge.setAttribute('class', cls);
   }
 
   // ---------- celebration ----------
-  // Measure Y has something to celebrate when Peanut is more than 99% sure it passes on a county
-  // update from Thu Nov 5 on (election-night counts can still swing), or when the county certifies
-  // a pass. Peanut wears a party hat while it lasts, and confetti falls once per visit (js/party.js;
-  // not for readers who asked for less motion). Tapping Peanut throws more. ?demo=1&party=1 previews it.
-  // Nothing changes when Measure Y fails.
-  var PARTY_FROM = new Date('2026-11-05T00:00:00-08:00').getTime();
-  var PARTY_PREVIEW = DEMO && params.get('party') === '1';
-  var party = { on: false, thrown: false };
+  // Measure Y has something to celebrate in three cases, and nothing changes when it fails:
+  // - Peanut is more than 99% sure it passes on a count posted from Thu Nov 5 on (election-night counts can
+  //   still swing): Peanut wears a party hat.
+  // - It's confirmed to pass (PeanutModel.confirmedPass): on a count posted from Thu Nov 5 on, YES leads by more
+  //   than the most votes Peanut thinks could still be counted, so it would win even if every one of them were a
+  //   NO. Peanut also holds up a front page of The Daily Peanut in front of the needle, and the readout says so.
+  // - The county certifies a pass: the same, with the front page's final edition.
+  // Confetti pops once per visit, then a few pieces keep drifting down until the celebration ends, and the
+  // Confetti chip under the needle stops them (js/party.js; never for readers who asked for less motion). Tapping
+  // Peanut throws more. The call isn't sticky: a correction can take it back, and the page follows.
+  // ?demo=1&party=1 previews the confirmed state on sample numbers, ?demo=1&party=final the certified one.
+  var PM = window.PeanutModel || {};
+  var PARTY_FROM = PM.confirmFrom || new Date('2026-11-05T00:00:00-08:00').getTime();
+  var party = { on: false };
+  // When the count shown was posted, in ms: the engine's time for the latest distinct count (on the release
+  // schedule for rehearsal data), else the county's time, for a result from an older cached worker.
+  function countedAt(r, data) {
+    if (r && r.counted && typeof r.counted.t === 'number') return r.counted.t;
+    return countyAt(data);
+  }
+  // The county's own time for the latest count, in ms (NaN without one).
+  function countyAt(data) {
+    var L = data && data.latest;
+    return L && L.county_updated ? Date.parse(L.county_updated) : NaN;
+  }
+  // Rehearsal data runs on remapped times (the engine places report i at the i-th scheduled release), so under
+  // ?rehearsal=1 a celebration also needs the county's own stamp to be on or after Thu Nov 5, as live data does.
+  function ownTimeOk(data) { return !REHEARSAL || countyAt(data) >= PARTY_FROM; }
   function partyFor(r, data) {
-    if (PARTY_PREVIEW) return true;
-    if (!r || !data) return false;
+    if (!r || !data || !ownTimeOk(data)) return false;
     if (r.status === 'final') return r.pYes >= 0.5;
-    var L = data.latest || {};
-    return r.status === 'live' && r.pYes > 0.99 && !!L.county_updated && new Date(L.county_updated).getTime() >= PARTY_FROM;
+    return r.status === 'live' && r.pYes > 0.99 && countedAt(r, data) >= PARTY_FROM;
   }
   function throwConfetti() {
     try { return !!(window.MYWParty && window.MYWParty.burst()); } catch (e) { return false; } // decoration only
   }
+  function setParty(on) {
+    party.on = on;
+    try { if (window.MYWParty) window.MYWParty.celebrate(on); } catch (e) {} // decoration only
+  }
   el.gauge.addEventListener('click', function () { if (party.on) throwConfetti(); });
+
+  // ---------- The Daily Peanut ----------
+  // While Measure Y is confirmed to pass, or certified as passed, Peanut grows into the hero of the card and holds
+  // a front page up over the gauge; the needle stays pinned at YES behind it. Classes on #gauge: "news", plus
+  // "news-final" for the certified edition and "news-sample" for made-up numbers. Nothing changes when Measure Y
+  // fails. The page itself is decoration (aria-hidden): its message goes into the gauge's accessible name.
+  var news = { kind: null, sample: false, label: '', figures: null, hooked: false };
+  function newsClasses() { return news.kind ? ' news' + (news.kind === 'final' ? ' news-final' : '') + (news.sample ? ' news-sample' : '') : ''; }
+
+  // The front page goes up when Measure Y is confirmed to pass or certified as passed. It stands in front of the
+  // needle, so it also waits for the needle to sit at YES.
+  function newsFor(r, data) {
+    if (!r || !(r.pYes >= 0.99) || !ownTimeOk(data)) return null;
+    if (r.status === 'final') return 'final';
+    return r.status === 'live' && !!PM.confirmedPass && PM.confirmedPass(r) ? 'confirmed' : null;
+  }
+  // The county certifies by the last scheduled release (Thu, Dec 3). Past that, a page still only confirmed says
+  // certification is pending. Sample numbers have their own calendar, so the demo never goes stale.
+  function certifyBy() { return Date.parse(SCHEDULE[SCHEDULE.length - 1].t); }
+  function certifyLate() { return !DEMO && Date.now() > certifyBy(); }
+  // A lead under half a percent of the votes on Y: a county correction or a recount could still change it. (With the
+  // current assumptions the bound behind a call is at least about 2% of the count, so a called lead is never this small.)
+  function smallLead(r) { return r.counted.yes - r.counted.no < 0.005 * r.counted.n; }
+  // The numbers the page shows, from the engine's result.
+  function newsFigures(r) {
+    var data = state.data || {};
+    return {
+      lead: r.counted.yes - r.counted.no,
+      atMost: r.remainingMax,
+      complete: r.remaining[0.9] === 0,
+      smallLead: smallLead(r),
+      threshold: r.threshold,
+      // The dateline follows the county's latest stamp, which can be later than the engine's distinct count (a
+      // re-post of the same numbers), so it agrees with the header's "Based on the county update of".
+      updated: Math.max(countedAt(r, data), countyAt(data) || -Infinity),
+      certifiedAt: Date.parse(data.certified_at), // NaN until the Certified run writes the field
+      certifyBy: certifyBy(),
+      pastDeadline: certifyLate(),
+      sample: DEMO || REHEARSAL
+    };
+  }
+
+  var npLong = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  var npShort = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' });
+  var npMonthDay = new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'short', day: 'numeric' });
+  var npWeekday = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'long' });
+  function npWhen(f, ms) { return typeof ms === 'number' && isFinite(ms) ? f.format(ms) : ''; }
+
+  // setNews(kind, figures): the one entry point. kind is 'confirmed' (Peanut's call), 'final' (the county
+  // certified a pass) or null (no page). figures, plain numbers:
+  //   lead          YES votes minus NO votes in the count shown
+  //   atMost        Peanut's worst case for the votes on Y still out (the engine's r.remainingMax); 0 means its
+  //                 estimate leaves nothing to count. Not used for 'final'.
+  //   complete      true when Peanut's schedule says the count is complete (the engine's r.remaining[0.9] is 0): the
+  //                 page says so, and atMost is the allowance left in the turnout estimate
+  //   smallLead     true for a lead under half a percent of the votes on Y: the page says a correction or a recount
+  //                 could still change it, and "if the county's count stands" instead of "a mathematical certainty"
+  //   threshold     the pass line as a share: 0.5 reads "a simple majority", anything else "66.7% of the vote";
+  //                 default 0.5
+  //   updated       when the county posted that count, in ms (the date line). A missing time hides the date line.
+  //   certifiedAt   when the county certified, in ms (data.certified_at, written by the Certified run). The final
+  //                 edition prints that date; without it the column reads FINAL / IT'S OFFICIAL, with no date
+  //   certifyBy     when the county certifies, in ms; default the last SCHEDULE entry (Thu Dec 3, 5 PM Pacific)
+  //   pastDeadline  true once that time has passed without a certified count: the page says certification is pending
+  //   sample        true for made-up numbers (demo, rehearsal): the SAMPLE stamp, and "Sample data." first in the name
+  // Writes the page, sets the classes on #gauge and returns one sentence for the gauge's accessible name (also kept
+  // in news.label), or '' when there is no page. It never throws: if the page can't be written, it stays hidden.
+  function setNews(kind, figures) {
+    var cl = el.gauge.classList;
+    function off() { news.kind = null; news.sample = false; news.label = ''; news.figures = null; cl.remove('news'); cl.remove('news-final'); cl.remove('news-sample'); return ''; }
+    if (kind !== 'confirmed' && kind !== 'final') return off();
+    var f = figures || {};
+    news.kind = kind; news.sample = !!f.sample; news.figures = f;
+    cl.add('news'); cl.toggle('news-final', kind === 'final'); cl.toggle('news-sample', news.sample);
+    try { news.label = fillNews(kind, f); }
+    catch (e) { return off(); } // the paper must never break the forecast: without it, the needle still shows the result
+    // Web fonts can arrive after the first fill; measure the lines again once they have.
+    if (!news.hooked && document.fonts && document.fonts.ready) {
+      news.hooked = true;
+      document.fonts.ready.then(function () { if (news.kind) try { fillNews(news.kind, news.figures); } catch (e) {} });
+    }
+    return news.label;
+  }
+
+  // Writes the page from the figures and returns its message. Every line is measured, and squeezed (a figure:
+  // shrunk) only when it would run past its column; a line is never stretched.
+  function fillNews(kind, f) {
+    var final = kind === 'final', lead = Math.abs(Math.round(f.lead || 0)), left = Math.max(0, Math.round(f.atMost || 0));
+    var certifyBy = typeof f.certifyBy === 'number' && isFinite(f.certifyBy) ? f.certifyBy : Date.parse(SCHEDULE[SCHEDULE.length - 1].t);
+    // Column 3's date: the deadline on the extra edition; on the final edition the certification time the data
+    // carries, and no date at all without it (the count's own time says nothing about when the county certified).
+    var certOn = typeof f.certifiedAt === 'number' && isFinite(f.certifiedAt) ? f.certifiedAt : NaN, certMs = final ? certOn : certifyBy;
+    var by = npWhen(npShort, certifyBy), certDay = npWhen(npMonthDay, certMs).toUpperCase(), certWeekday = npWhen(npWeekday, certMs).toUpperCase();
+    var dateLine = npWhen(npLong, f.updated).toUpperCase(), stale = !final && !!f.pastDeadline, none = !final && left === 0;
+    // The pass line, from the data's threshold: Measure Y's is a simple majority.
+    var T = typeof f.threshold === 'number' && f.threshold > 0 && f.threshold < 1 ? f.threshold : 0.5, simple = T === 0.5;
+    var need = simple ? 'a simple majority' : pct(T, Math.abs(100 * T - Math.round(100 * T)) < 1e-6 ? 0 : 1) + ' of the vote';
+    var official = 'It’s official: the county has certified the result. Belmont voters have passed Measure Y, the community center tax. Thank you to everyone who voted.';
+    var complete = !final && !none && !!f.complete, small = !final && !!f.smallLead, leftVotes = votes(left), leftUnit = left === 1 ? 'VOTE' : 'VOTES';
+    var moreVotes = left === 1 ? '1 more vote' : fmt(left) + ' more votes';
+    var leadVotes = votes(lead), unit = lead === 1 ? 'VOTE' : 'VOTES';
+    // Each column: kicker, the big figure, a small line, the story (column 1 also gets the byline).
+    var c = final ? {
+      sub: 'It’s Official: The County Has Certified the Count',
+      cols: [
+        ['YES WINS BY', fmt(lead), unit + ', FINAL', 'The certified count puts YES ahead of NO by ' + leadVotes + '. Measure Y needed ' + need + ', and it got ' + (simple ? 'one' : 'more') + ', with every vote counted.'],
+        ['EVERY VOTE', 'COUNTED', 'PEANUT OFF DUTY', 'The county has counted every ballot, so Peanut’s forecast is done. Peanut is off duty for this election, and celebrating with everyone who voted.'],
+        isFinite(certOn) ? ['CERTIFIED', certDay, certWeekday, official] : ['CERTIFIED', 'FINAL', 'IT’S OFFICIAL', official]
+      ],
+      label: 'Peanut holds up the final edition of The Daily Peanut: Measure Y passes. It’s official: the county ' +
+        (isFinite(certOn) ? 'certified the count on ' + npWhen(npShort, certOn) : 'has certified the count') + ', and YES won by ' + leadVotes + '.'
+    } : {
+      sub: stale ? 'Peanut Calls It; Awaiting County Certification' : 'Peanut Calls It; County Certifies by ' + by,
+      cols: [
+        ['YES LEADS BY', fmt(lead), unit, small
+          ? 'YES leads NO by ' + leadVotes + ' in the county’s latest count. A county correction or a recount could still change a lead this small.'
+          : 'The county’s latest count puts YES ahead by ' + leadVotes + (none ? '' : ', more than Peanut thinks are left') + '. Measure Y needs ' + need + ', and it has ' + (simple ? 'one' : 'more') + '.'],
+        none ? ['STILL OUT', 'NONE', 'NONE TO COUNT', 'Peanut’s schedule says the count is complete, and its estimate leaves no votes on Y to count. The county still has to certify the count.']
+          : complete ? ['AT MOST LEFT', fmt(left), leftUnit + ' ON Y', 'Peanut’s schedule says the count is complete. Its turnout estimate still allows up to ' + moreVotes + ' on Y; even if every one were a NO, YES would still be ahead.']
+          : ['AT MOST LEFT', fmt(left), leftUnit + ' ON Y', 'Peanut’s worst case for the votes still to count, 4.5 standard deviations above its turnout estimate. Even if every one were a NO, YES would still be ahead.'],
+        stale ? ['OFFICIAL', 'PENDING', 'AWAITS COUNTY', (small ? 'If the county’s count stands, Measure Y passes under Peanut’s methodology.' : 'Under Peanut’s methodology the result is a mathematical certainty.') + ' Certification was expected by ' + by + '. Peanut keeps checking every county update.']
+          : ['OFFICIAL BY', certDay, certWeekday, (small ? 'If the county’s count stands, Measure Y passes under Peanut’s methodology.' : 'Under Peanut’s methodology the result is a mathematical certainty.') + ' It becomes official when the county certifies the count, by ' + by + '.']
+      ],
+      label: 'Peanut holds up an extra edition of The Daily Peanut: Measure Y passes. YES leads by ' + leadVotes +
+        (none ? ', and Peanut’s estimate leaves no votes on Y to count. '
+          : (complete ? ', Peanut’s schedule says the count is complete, and its estimate allows for at most ' + moreVotes + ' on Y' : ', and at most ' + leftVotes + ' on Y ' + (left === 1 ? 'is' : 'are') + ' still out') +
+            ', so even if every one were a NO, YES would still win. ') +
+        (small ? 'Under Peanut’s methodology, if the county’s count stands, Measure Y passes. ' : 'Under Peanut’s methodology that makes it a mathematical certainty. ') +
+        (stale ? 'The county has yet to certify the result.' : 'The county certifies the result by ' + by + '.')
+    };
+    $('newsDate').textContent = dateLine; fitLine($('newsDate'));
+    $('newsSub').textContent = c.sub; fitLine($('newsSub'));
+    var colsEl = el.gauge.querySelectorAll('.np-col');
+    for (var i = 0; i < colsEl.length; i++) {
+      var g = colsEl[i], col = c.cols[i];
+      var kick = g.querySelector('.np-kick'), big = g.querySelector('.np-big'), small = g.querySelector('.np-small');
+      kick.textContent = col[0]; fitLine(kick);
+      big.textContent = col[1]; fitLine(big, true);
+      small.textContent = col[2]; fitLine(small);
+      newsStory(g.querySelector('.np-story'), col[3], i === 0 ? 'BY PEANUT' : '');
+    }
+    return (f.sample ? 'Sample data. ' : '') + c.label;
+  }
+
+  // A line is authored at 10px and scaled by its transform (so a browser's minimum font size can't inflate it).
+  // It must fit data-w gauge units: a long one is squeezed, a big figure shrunk; neither is ever stretched.
+  function fitLine(t, shrink) {
+    var w = +t.getAttribute('data-w'), sz = +t.getAttribute('data-sz') || 10, cd = +t.getAttribute('data-cd') || 1;
+    var sy = sz / 10, sx = sy * cd, len = 0;
+    t.removeAttribute('textLength'); t.removeAttribute('lengthAdjust');
+    if (!w) return;
+    try { len = t.getComputedTextLength(); } catch (e) { return; }
+    if (shrink) { if (len * sx > w) { sy = w / (len * cd); sx = sy * cd; } setScale(t, sx, sy); }
+    else if (len * sx > w) { t.setAttribute('textLength', (w / sx).toFixed(2)); t.setAttribute('lengthAdjust', 'spacingAndGlyphs'); }
+  }
+  function setScale(t, sx, sy) {
+    var m = /translate\([^)]*\)/.exec(t.getAttribute('transform') || '');
+    t.setAttribute('transform', (m ? m[0] : '') + ' scale(' + sx.toFixed(3) + ' ' + sy.toFixed(3) + ')');
+  }
+  // A column's story: greedy line breaks from measured word widths (cached, so a refill costs little), every line
+  // but the last justified as newsprint is, and only as many lines as fit above the page's foot.
+  var npWords = {};
+  function newsStory(g, text, byline) {
+    var NS = 'http://www.w3.org/2000/svg', W = +g.getAttribute('data-w'), step = +g.getAttribute('data-step'), room = +g.getAttribute('data-lines');
+    while (g.firstChild) g.removeChild(g.firstChild);
+    var probe = document.createElementNS(NS, 'text'); probe.setAttribute('class', 'np-body'); g.appendChild(probe);
+    function width(s) { if (npWords[s] === undefined) { probe.textContent = s; npWords[s] = probe.getComputedTextLength(); } return npWords[s]; }
+    var space = width('a a') - 2 * width('a'), lines = [], cur = '', curW = 0;
+    text.split(' ').forEach(function (wd) {
+      var ww = width(wd);
+      if (cur && curW + space + ww > W) { lines.push(cur); cur = wd; curW = ww; }
+      else { curW = cur ? curW + space + ww : ww; cur = cur ? cur + ' ' + wd : wd; }
+    });
+    if (cur) lines.push(cur);
+    g.removeChild(probe);
+    var y = 0, n = 0;
+    function put(cls, s) {
+      var t = document.createElementNS(NS, 'text'); t.setAttribute('class', cls); t.setAttribute('x', '0'); t.setAttribute('y', y.toFixed(1)); t.textContent = s;
+      g.appendChild(t); y += step; n++; return t;
+    }
+    if (byline) put('np-by', byline);
+    lines.slice(0, room - n).forEach(function (s, k, all) {
+      var t = put('np-body', s);
+      if (k < all.length - 1) { t.setAttribute('textLength', W); t.setAttribute('lengthAdjust', width(s) > W ? 'spacingAndGlyphs' : 'spacing'); }
+      else if (width(s) > W) { t.setAttribute('textLength', W); t.setAttribute('lengthAdjust', 'spacingAndGlyphs'); }
+    });
+  }
 
   // ---------- rendering ----------
 
   function renderWaiting(priors) {
     view.live = false; view.lo = view.hi = 0.5;
-    party.on = false;
+    setParty(false); setNews(null);
     setMood('', true);
     view.p = 0.5; setPointer(0.5);
     el.band.setAttribute('d', '');
@@ -647,19 +1010,51 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     return 'sure';
   }
 
+  // While Measure Y is confirmed to pass: the lead, the votes still out and why that settles it. The lead and
+  // "at most" are exact, so "at most" never looks smaller than it is; "about" is rounded. Built from numbers and
+  // dates only, with a link to the method.
+  function confirmedTake(r) {
+    var lead = r.counted.yes - r.counted.no, rem = r.remaining[0.5], most = r.remainingMax, complete = r.remaining[0.9] === 0;
+    var out = most === 0
+      ? 'YES leads by ' + votes(lead) + ', and Peanut’s estimate leaves no votes on Y to count.'
+      : complete
+        ? 'Peanut’s schedule says the count is complete. YES leads by ' + votes(lead) + ', and Peanut allows for at most ' + (most === 1 ? '1 more vote' : fmt(most) + ' more votes') + ' on Y; even if every one were a NO, YES would still win.'
+        : 'YES leads by ' + votes(lead) + '. Peanut estimates ' + (rem < 5 ? 'almost no' : 'about ' + approx(rem)) + ' votes on Y are still out, at most ' + fmt(most) + '. Even if every one were a NO, YES would still win.';
+    var when = certifyLate() ? 'The county is still to certify the count' : 'The county certifies the final count by ' + npWhen(npShort, certifyBy());
+    // A lead under half a percent of the count is a certainty only if the count stands, and the take says so.
+    out += smallLead(r)
+      ? ' ' + when + '. If the county’s count stands, Measure Y passes under <a href="#call">Peanut’s methodology</a>. A county correction or a recount could still change a lead this small.'
+      : ' ' + when + ', but Measure Y passing is now a mathematical certainty under <a href="#call">Peanut’s methodology</a>.';
+    return out;
+  }
+  // A page left open across the certification deadline gets the "pending" words without new numbers.
+  function checkNewsDue() {
+    if (news.kind === 'confirmed' && news.figures && state.r && news.figures.pastDeadline !== certifyLate()) renderNeedle(state.r);
+  }
+
   function renderNeedle(r) {
     var z = zoneFor(r.pYes), final = r.status === 'final';
     view.p = r.pYes; view.lo = r.pYes; view.hi = r.pYes; view.live = !final; view.walk = 0;
-    party.on = partyFor(r, state.data);
-    if (party.on && !party.thrown) party.thrown = throwConfetti();
+    news.kind = newsFor(r, state.data);
+    var confirmed = news.kind === 'confirmed';
+    setParty(partyFor(r, state.data) || !!news.kind);
     setMood(moodFor(r), false);
     setPointer(r.pYes);
+    // The page measures its text, so it is filled after the class is on.
+    setNews(news.kind, news.kind ? newsFigures(r) : null);
     el.band.setAttribute('d', '');
-    el.zone.className = 'zone mono ' + (final ? (r.pYes >= 0.5 ? 'yes' : 'no') : z.side === 'tu' ? '' : z.side);
-    el.zone.textContent = final ? 'Certified result' : z.name;
-    el.heroNum.textContent = final ? (r.pYes >= 0.5 ? 'Passed' : 'Failed') : chanceText(r.pYes);
-    el.heroLabel.textContent = final ? 'certified by the county' : 'chance Measure Y passes';
-    el.take.textContent = takeFor(r);
+    if (confirmed) {
+      // Peanut's call: the readout says so, and the take gives the numbers behind it.
+      el.zone.className = 'zone mono yes'; el.zone.textContent = 'Confirmed to pass';
+      el.heroNum.textContent = 'Passes'; el.heroLabel.textContent = 'Peanut’s call, not yet certified';
+      el.take.innerHTML = confirmedTake(r);
+    } else {
+      el.zone.className = 'zone mono ' + (final ? (r.pYes >= 0.5 ? 'yes' : 'no') : z.side === 'tu' ? '' : z.side);
+      el.zone.textContent = final ? 'Certified result' : z.name;
+      el.heroNum.textContent = final ? (r.pYes >= 0.5 ? 'Passed' : 'Failed') : chanceText(r.pYes);
+      el.heroLabel.textContent = final ? 'certified by the county' : 'chance Measure Y passes';
+      el.take.textContent = takeFor(r);
+    }
     renderMeta(r);
     showWobbleButton();
   }
@@ -668,8 +1063,14 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     var final = r.status === 'final', band = view.hi - view.lo >= 0.02;
     el.metaLine.innerHTML = final ? '' : 'Peanut estimates <b>' + Math.round(100 * r.countedFraction) + '% is counted</b>' +
       (band ? ' · <a href="#wobble">wobble</a> ' + Math.round(100 * view.lo) + '–' + Math.round(100 * view.hi) + '%' : '');
-    el.gaugeTitle.textContent = final ? 'Measure Y ' + (r.pYes >= 0.5 ? 'passed' : 'failed') + ', certified' :
+    // The gauge's accessible name: the needle, then the front page's message while it's up. With made-up numbers
+    // it starts with "Sample data.", like the stamp on the page.
+    var name = final ? 'Measure Y ' + (r.pYes >= 0.5 ? 'passed' : 'failed') + ', certified' :
+      newsFor(r, state.data) === 'confirmed' ? 'Needle pinned at YES: Measure Y is confirmed to pass under Peanut’s methodology' :
       'Needle at ' + chanceText(r.pYes) + ' chance Measure Y passes, ' + zoneFor(r.pYes).name + (band ? ', wobble ' + Math.round(100 * view.lo) + ' to ' + Math.round(100 * view.hi) + '%' : '');
+    var label = news.label || '', sample = label.indexOf('Sample data. ') === 0;
+    if (sample) label = label.slice('Sample data. '.length);
+    el.gaugeTitle.textContent = (sample ? 'Sample data. ' : '') + name + (label ? '. ' + label : '');
   }
 
   function renderBand(r, band) {
@@ -719,8 +1120,17 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
       '<p class="note">Likely between ' + pct(q[0.1], digits) + ' and ' + pct(q[0.9], digits) + ' YES (80% of simulations). The inner band is the middle half.</p>' +
       '<ul class="facts">' +
       '<li><span>Counted so far</span><b>' + pct(r.counted.share) + ' YES<small>of ' + fmt(r.counted.n) + ' votes</small></b></li>' +
-      '<li><span>Votes on Y left to count</span><b>about ' + approx(r.remaining[0.5]) + '<small>likely ' + approx(r.remaining[0.1]) + '–' + approx(r.remaining[0.9]) + '</small></b></li>' +
-      needs + '</ul>';
+      leftRows(r) + needs + '</ul>';
+  }
+
+  // The "votes left" rows: the usual estimate, plus Peanut's worst case ("at most", the bound behind the call) while
+  // Measure Y is confirmed. When Peanut's schedule says the count is complete, the two become one row.
+  function leftRows(r) {
+    var usual = '<li><span>Votes on Y left to count</span><b>about ' + approx(r.remaining[0.5]) + '<small>likely ' + approx(r.remaining[0.1]) + '–' + approx(r.remaining[0.9]) + '</small></b></li>';
+    if (newsFor(r, state.data) !== 'confirmed') return usual;
+    var lead = 'YES leads by ' + fmt(r.counted.yes - r.counted.no);
+    if (r.remaining[0.9] === 0) return '<li><span>Votes on Y left to count</span><b>None expected<small>at most ' + fmt(r.remainingMax) + ' more; ' + lead + '</small></b></li>';
+    return usual + '<li><span>Votes still out, at most</span><b>' + fmt(r.remainingMax) + '<small>' + lead + '</small></b></li>';
   }
 
   // How the most recent county update with at least 50 new votes broke, and what kind of ballots it was.
@@ -770,6 +1180,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
       if (r.phase <= 1 && !done) items.push('<li><b>In-person ballots still to count:</b> ' + pointsText(r.leans.electionNight.mean, base) + ' (give or take ' + (100 * r.leans.electionNight.sd).toFixed(1) + ').</li>');
       if (!done) items.push('<li><b>Late ballots still to count:</b> ' + pointsText(r.leans.postElection.mean, base) + ' (give or take ' + (100 * r.leans.postElection.sd).toFixed(1) + ').</li>');
       items.push('<li><b>Total votes on Y:</b> about ' + approx(r.totalVotes[0.5]) + ' (likely ' + approx(r.totalVotes[0.1]) + '–' + approx(r.totalVotes[0.9]) + '), so about ' + Math.round(100 * r.countedFraction) + '% is counted.</li>');
+      if (newsFor(r, state.data) === 'confirmed') items.push('<li><b>Peanut’s call:</b> YES leads by more than Peanut’s worst case for the votes still out (4.5 standard deviations above its turnout estimate), so the result no longer rests on how the last ballots lean, only on the estimate of how many are left. <a href="#call">How Peanut calls it</a>.</li>');
     } else if (r) {
       items.push('<li>The count is certified, so there is nothing left to assume.</li>');
     } else {
@@ -862,7 +1273,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   var LIVE_HREF = './' + (DEMO || REHEARSAL ? location.search : '');
   function showError(what) {
     view.live = false;
-    if (party.on) { party.on = false; el.gauge.classList.remove('party'); }
+    if (party.on) { setParty(false); el.gauge.classList.remove('party'); }
+    setNews(null);
+    el.gaugeTitle.textContent = what === 'model' ? 'Forecast not available' : 'Numbers not loading';
     showWobbleButton();
     el.pill.className = 'pill mono error'; el.pillText.textContent = what === 'model' ? 'Forecast unavailable' : 'Can’t connect';
     el.zone.className = 'zone mono no'; el.zone.textContent = what === 'model' ? 'Peanut hit a snag' : 'Numbers not loading';
@@ -877,7 +1290,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   // So does a problem with the live updates (data/status.json): the banner gives the reason.
   function showPaused(reason) {
     view.live = false; view.lo = view.hi = view.p = 0.5;
-    party.on = false;
+    setParty(false); setNews(null);
     setMood('', true); setPointer(0.5); el.band.setAttribute('d', ''); showWobbleButton();
     el.gaugeTitle.textContent = 'Forecast paused';
     el.zone.className = 'zone mono'; el.zone.textContent = 'Peanut is taking a break';
@@ -1047,7 +1460,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
         showError('data');
         priorsP.then(function (p) { if (!state.priorsText) renderPriorTable(p); }, function () {});
       });
-    }).then(renderBanner);
+    }).then(function () { renderBanner(); checkNewsDue(); });
   }
 
   load();

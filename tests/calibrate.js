@@ -70,7 +70,7 @@ function simulateElection(rng, W) {
   var rest = V - counted, pr = Math.min(0.99, Math.max(0.01, se + d2 + W.batchSd * rng.normal())), ry = 0;
   for (var j = 0; j < rest; j++) if (rng.uniform() < pr) ry++;
   var finalShare = (yes + ry) / V;
-  return { hist: hist, finalShare: finalShare, passed: finalShare > 0.5 };
+  return { hist: hist, finalShare: finalShare, passed: finalShare > 0.5, V: V };
 }
 
 function run(worldName, n) {
@@ -106,6 +106,11 @@ function run(worldName, n) {
   });
 }
 
-var nElections = parseInt(process.argv[2] || '300', 10);
-var which = process.argv[3] || 'all';
-(which === 'all' ? Object.keys(WORLDS) : [which]).forEach(function (w) { run(w, nElections); });
+// tests/confirm.js reuses the same made-up elections.
+module.exports = { simulateElection: simulateElection, WORLDS: WORLDS };
+
+if (require.main === module) {
+  var nElections = parseInt(process.argv[2] || '300', 10);
+  var which = process.argv[3] || 'all';
+  (which === 'all' ? Object.keys(WORLDS) : [which]).forEach(function (w) { run(w, nElections); });
+}

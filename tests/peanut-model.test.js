@@ -387,3 +387,184 @@ test('a county correction keeps the night\'s votes in the night', function () {
   assert.strictEqual(mixed.observed.night.n, 3160 + 3200 - 2821 - 2603);
   assert.strictEqual(mixed.observed.post.n, 3700 + 3600 - 3160 - 3200);
 });
+
+// ---------- confirmed to pass ----------
+// Measure Y is confirmed to pass when a count posted from Thu Nov 5 on leaves YES above the pass line even if every
+// vote in Peanut's worst case for the votes still out (r.remainingMax, M.boundZ standard deviations above its turnout
+// estimate) were a NO.
+var FRI13 = '2026-11-13T16:22:00-08:00', NOV16 = '2026-11-16T16:20:00-08:00';
+var CALL = [[3780, 2620, FIRST], [4560, 3290, '2026-11-04T01:02:00-08:00'], [5250, 3700, THU], [6120, 4210, MON], [6640, 4500, FRI13], [6870, 4640, NOV16]];
+// What the rule compares, without the date: YES stays above the line if every vote that could be left is a NO.
+function evenIfAllNo(r) { return r.counted.yes > r.threshold * (r.counted.n + r.remainingMax); }
+
+test('the bound on the votes still out is a whole number at or above the usual range', function () {
+  [data(CALL.slice(0, 3)), data(CALL), data([[3300, 3100, FIRST]]), data([[5701, 5700, '2026-12-03T17:05:00-08:00']])].forEach(function (d) {
+    var r = M.forecast(d, P);
+    assert.ok(Number.isInteger(r.remainingMax) && r.remainingMax >= r.remaining[0.9], r.remainingMax + ' vs ' + r.remaining[0.9]);
+    assert.ok(r.remainingMax > 0, 'the bound is never 0 for a live count');
+  });
+});
+
+test('the bound reads the fitted turnout distribution, not the random draws', function () {
+  [data(CALL.slice(0, 3)), data(CALL), data([[3300, 3100, FIRST]])].forEach(function (d) {
+    var r = M.forecast(d, P), P2 = JSON.parse(JSON.stringify(P));
+    P2.version = P.version + '-another-seed'; P2.sims = 3000;
+    assert.strictEqual(M.forecast(d, P2).remainingMax, r.remainingMax, 'another seed and fewer simulations');
+    assert.strictEqual(M.forecast(d, P, { sims: 2000 }).remainingMax, r.remainingMax, 'fewer simulations');
+  });
+});
+
+test('the bound is 4.5 standard deviations above the turnout estimate', function () {
+  // One report: log(votes counted) = log(share of the count done) + log(total votes), with the turnout prior, the
+  // schedule prior at that time and the count noise. Conditioning on it by hand gives the posterior for the total.
+  var n = 6400, r = M.forecast(data([[3300, 3100, FIRST]]), P);
+  var T = P.turnout, sch = M.scheduleAt(Date.parse(FIRST), P), tau = P.noise.count_log_sd;
+  var vx = T.y_votes_log_sd * T.y_votes_log_sd, vw = Math.pow(sch.sd / sch.mean, 2), vObs = vx + vw + tau * tau;
+  var resid = Math.log(n) - Math.log(T.y_votes_median) - Math.log(sch.mean);
+  var meanLog = Math.log(T.y_votes_median) + vx / vObs * resid, sdLog = Math.sqrt(vx - vx * vx / vObs);
+  assert.strictEqual(M.boundZ, 4.5);
+  assert.strictEqual(r.remainingMax, Math.ceil(Math.exp(meanLog + 4.5 * sdLog) - n));
+  assert.ok(r.remainingMax > r.remaining[0.9] * 1.3, 'well above the usual range: ' + r.remainingMax + ' vs ' + r.remaining[0.9]);
+});
+
+test('Measure Y is confirmed once YES leads by more than the most votes that could be left', function () {
+  var friday = M.forecast(data(CALL), P, { upTo: 4 }), monday = M.forecast(data(CALL), P);
+  assert.ok(friday.pYes > 0.99 && !evenIfAllNo(friday), 'Friday: very likely, but the lead ' + (6640 - 4500) + ' is under ' + friday.remainingMax);
+  assert.strictEqual(M.confirmedPass(friday), false);
+  assert.ok(monday.counted.yes - monday.counted.no > monday.remainingMax, 'Monday: the lead tops the bound');
+  assert.strictEqual(M.confirmedPass(monday), true);
+  assert.ok(monday.pYes > 0.999, 'a confirmed pass is never shown next to a lower chance: ' + monday.pYes);
+});
+
+test('a lead equal to the bound is not enough: all NO would tie, and a tie fails', function () {
+  // The bound depends only on how many votes were counted when, so moving votes between YES and NO keeps it. A total
+  // of 11,001 or 11,002 votes makes the lead and the bound the same parity, so a count with lead = bound exists.
+  var n, B, at = function (yes) { return M.forecast(data([[3400, 3000, FIRST], [4900, 4200, THU], [yes, n - yes, NOV16]]), P); };
+  for (n = 11001; (n + (B = at(6100).remainingMax)) % 2; n++);
+  var y = (n + B) / 2, tie = at(y), win = at(y + 1);
+  assert.strictEqual(win.remainingMax, B);
+  assert.strictEqual(tie.counted.yes - tie.counted.no, B, 'the lead is exactly the bound');
+  assert.strictEqual(M.confirmedPass(tie), false);
+  assert.strictEqual(M.confirmedPass(win), true);
+  assert.strictEqual(M.confirmedPass(at(y - 1)), false);
+});
+
+test('nothing is confirmed before Thu Nov 5, Pacific time, even when the math holds', function () {
+  var night = [[11000, 1500, FIRST], [12350, 1800, '2026-11-04T02:01:00-08:00']];
+  var r = M.forecast(data(night), P);
+  assert.ok(evenIfAllNo(r), 'an election-night landslide where the math holds');
+  assert.strictEqual(M.confirmedPass(r), false, 'election night');
+  var wed = M.forecast(data(night.concat([[13900, 2000, '2026-11-04T23:59:59-08:00']])), P);
+  var thu = M.forecast(data(night.concat([[13900, 2000, '2026-11-05T00:00:00-08:00']])), P);
+  assert.ok(evenIfAllNo(wed) && evenIfAllNo(thu));
+  assert.strictEqual(M.confirmedPass(wed), false, 'one second before Thursday');
+  assert.strictEqual(M.confirmedPass(thu), true, 'Thursday 12:00 AM');
+  assert.strictEqual(M.confirmFrom, Date.parse('2026-11-05T00:00:00-08:00'));
+});
+
+test('a complete count keeps the schedule\'s last-point uncertainty: a lead of a handful of votes is not called', function () {
+  var DEC3 = '2026-12-03T17:05:00-08:00';
+  var ahead = M.forecast(data([[5701, 5700, DEC3]]), P);
+  assert.strictEqual(ahead.status, 'live');
+  assert.deepStrictEqual([ahead.remaining[0.1], ahead.remaining[0.5], ahead.remaining[0.9]], [0, 0, 0], 'the simulations treat the count as complete');
+  assert.ok(ahead.remainingMax > 100 && ahead.remainingMax < 0.03 * ahead.counted.n, 'the bound keeps the schedule noise: ' + ahead.remainingMax);
+  assert.strictEqual(M.confirmedPass(ahead), false, 'a one-vote lead on certification day is not called');
+  assert.strictEqual(M.confirmedPass(M.forecast(data([[5700, 5700, DEC3]]), P)), false, 'a tie');
+  var clear = M.forecast(data([[6000, 5400, DEC3]]), P);
+  assert.ok(clear.counted.yes - clear.counted.no > clear.remainingMax, 'a 600-vote lead tops the bound ' + clear.remainingMax);
+  assert.strictEqual(M.confirmedPass(clear), true);
+  assert.strictEqual(clear.remaining[0.9], 0);
+  // The same count an hour before the schedule says complete has a slightly bigger bound, and no call either.
+  var before = M.forecast(data([[5701, 5700, '2026-12-03T08:00:00-08:00']]), P);
+  assert.ok(before.remainingMax >= ahead.remainingMax && before.remaining[0.9] > 0, before.remainingMax + ' vs ' + ahead.remainingMax);
+  assert.strictEqual(M.confirmedPass(before), false);
+});
+
+test('a certified count is the county\'s result, not a confirmation', function () {
+  // The page shows the certified result (r.status 'final') on its own, so the helper says false there.
+  var pass = M.forecast(data(CALL, { status: 'final' }), P);
+  assert.strictEqual(pass.status, 'final');
+  assert.strictEqual(pass.pYes, 1);
+  assert.strictEqual(pass.remainingMax, 0);
+  assert.strictEqual(pass.threshold, 0.5);
+  assert.strictEqual(M.confirmedPass(pass), false);
+  assert.strictEqual(M.confirmedPass(M.forecast(data([]), P)), false, 'waiting');
+  assert.strictEqual(M.confirmedPass(null), false);
+});
+
+test('the pass line comes from the data', function () {
+  var twoThirds = M.forecast(data(CALL, { threshold: 0.6667 }), P);
+  assert.strictEqual(twoThirds.threshold, 0.6667);
+  assert.strictEqual(M.confirmedPass(twoThirds), false, '59.7% YES is short of two thirds');
+  var big = [[4800, 1600, FIRST], [5700, 2150, '2026-11-04T01:02:00-08:00'], [6700, 2250, THU], [7800, 2530, MON], [8500, 2640, FRI13], [9200, 2810, NOV16]];
+  var r = M.forecast(data(big, { threshold: 0.6667 }), P);
+  assert.ok(r.counted.yes > 0.6667 * (r.counted.n + r.remainingMax));
+  assert.strictEqual(M.confirmedPass(r), true);
+  // Just under the line plus the bound is not confirmed.
+  var y = Math.floor(0.6667 * (12010 + r.remainingMax));
+  var under = M.forecast(data(big.slice(0, -1).concat([[y, 12010 - y, NOV16]]), { threshold: 0.6667 }), P);
+  assert.strictEqual(under.remainingMax, r.remainingMax);
+  assert.strictEqual(M.confirmedPass(under), false);
+});
+
+test('a county correction that lowers YES takes the call back', function () {
+  var called = [[3400, 3000, FIRST], [4900, 4200, THU], [6133, 4868, NOV16]];
+  assert.strictEqual(M.confirmedPass(M.forecast(data(called), P)), true);
+  var fixed = M.forecast(data(called.concat([[6050, 4868, '2026-11-16T18:00:00-08:00']])), P);
+  assert.ok(fixed.counted.yes - fixed.counted.no <= fixed.remainingMax);
+  assert.strictEqual(M.confirmedPass(fixed), false);
+});
+
+test('the worker hands the page the same call as the engine', function () {
+  var fs = require('fs'), vm = require('vm'), path = require('path'), dir = path.join(__dirname, '..', 'js');
+  var queue = [], posted = [];
+  var ctx = { self: { postMessage: function (m) { posted.push(JSON.parse(JSON.stringify(m))); } }, JSON: JSON, Math: Math, Date: Date,
+    setTimeout: function (f) { queue.push(f); } };
+  ctx.importScripts = function (f) { vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8'), ctx); };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(dir, 'peanut-worker.js'), 'utf8'), ctx);
+  [data(CALL), data(CALL.slice(0, 5)), data(CALL, { status: 'final' })].forEach(function (d) {
+    ctx.self.onmessage({ data: JSON.parse(JSON.stringify({ key: 'k', data: d, priors: P, remapTimes: false })) });
+    while (queue.length) queue.shift()();
+    var r = posted.splice(0).filter(function (m) { return m.out && m.out.type === 'needle'; })[0].out.r, e = M.forecast(d, P);
+    assert.deepStrictEqual([r.remainingMax, r.threshold, r.counted.t], [e.remainingMax, e.threshold, e.counted.t]);
+    assert.strictEqual(M.confirmedPass(r), M.confirmedPass(e));
+  });
+});
+
+test('adding the call changed no other number', function () {
+  // The engine's numbers before the call was added, with these assumptions frozen so a later edit of
+  // data/peanut-priors.json can't break the check. Order: pYes, final-share quantiles (7), votes left (3),
+  // total votes (3), counted fraction, then for live forecasts the baseline, late expectation, both leans
+  // (mean, sd) and the share the trailing side needs.
+  var FROZEN = {"version":"2026-10-29.5","sims":20000,"turnout":{"y_votes_median":11300,"y_votes_log_sd":0.11},"schedule":[{"at":"2026-11-03T20:10:00-08:00","counted_share":0.48,"sd":0.1},{"at":"2026-11-04T03:00:00-08:00","counted_share":0.565,"sd":0.1},{"at":"2026-11-05T16:30:00-08:00","counted_share":0.66,"sd":0.09},{"at":"2026-11-06T16:30:00-08:00","counted_share":0.72,"sd":0.08},{"at":"2026-11-09T16:30:00-08:00","counted_share":0.82,"sd":0.06},{"at":"2026-11-12T09:30:00-08:00","counted_share":0.89,"sd":0.045},{"at":"2026-11-13T16:30:00-08:00","counted_share":0.93,"sd":0.035},{"at":"2026-11-16T16:30:00-08:00","counted_share":0.96,"sd":0.02},{"at":"2026-12-03T17:00:00-08:00","counted_share":1,"sd":0.002}],"schedule_correlation":0.7,"phases":{"first_report_ends":"2026-11-03T20:55:00-08:00","election_night_ends":"2026-11-04T12:00:00-08:00","vote_center_share":{"mean":0.085,"sd":0.025}},"leans":{"election_night":{"mean":-0.06,"sd":0.06},"post_election":{"mean":0.04,"sd":0.045},"correlation":0.6,"tail_df":5},"noise":{"increment_sd":0.02,"min_increment_votes":50,"remaining_batch_sd":0.01,"lean_drift_sd":0.02,"model_sd":0.01,"count_log_sd":0.005},"demo_release_times":["2026-11-03T20:10:00-08:00","2026-11-03T22:00:00-08:00","2026-11-04T01:00:00-08:00","2026-11-05T16:30:00-08:00","2026-11-09T16:30:00-08:00","2026-11-13T16:30:00-08:00"]};
+  var L16 = '2026-11-16T16:25:00-08:00', CASES = {
+    night: [[[3300, 3100, FIRST], [3750, 3620, NIGHT]],
+      [0.9245,0.495338037031,0.503214118643,0.513886058082,0.525499751521,0.537923740377,0.550104439728,0.558475748115,2984.55876298,4339.8265451,5909.88063148,10354.558763,11709.8265451,13279.8806315,0.629385924003,0.515625,0.0431561704988,-0.0529862877803,0.0235619619679,0.0431561704988,0.037528937175,0.514977557127]],
+    thu: [[[3300, 3100, FIRST], [3750, 3620, NIGHT], [4400, 4250, THU]],
+      [0.9029,0.496101313858,0.500174220101,0.506217254059,0.512376114452,0.518922467485,0.525466045584,0.529983425472,2095.89846619,3324.2359598,4726.13592808,10745.8984662,11974.2359598,13376.1359281,0.722384294834,0.515625,0.0431561704988,-0.0593411928774,0.0228914233263,0.007329521835,0.0204553326595,0.522561575323]],
+    nov16: [[[3354, 3096, FIRST], [5363, 5187, '2026-11-04T01:02:00-08:00'], [6055, 5795, THU], [6691, 6359, MON], [7015, 6655, L16]],
+      [1,0.51117209195,0.511876805331,0.512816466537,0.513688165693,0.514762448109,0.515926100999,0.51674417877,253.71459077,549.955967431,859.512210268,13923.7145908,14219.9559674,14529.5122103,0.961325058341,0.52,0.0519676394453,-0.0378641166464,0.0197221864817,0.00956534212161,0.0196747013254,0.827298930569]],
+    fix: [[[3300, 3100, FIRST], [3600, 3400, NIGHT], [4400, 4250, THU], [4300, 4250, MON]],
+      [0.51805,0.488984972678,0.491877515905,0.496246073769,0.500241675664,0.504035227749,0.507688393474,0.510314666327,1026.55982529,1737.73907398,2519.89975521,9576.55982529,10287.739074,11069.8997552,0.831086396974,0.515625,0.0562764150943,-0.0419315235824,0.0249115178837,-0.030185165193,0.020058946474,0.514386509675]],
+    line55: [[[3500, 3000, FIRST]],
+      [0.4569,0.505241822628,0.515939867383,0.531547999498,0.54744804157,0.563629041325,0.580526849829,0.591872140107,3889.6482157,5249.50871933,6824.88339347,10389.6482157,11749.5087193,13324.8833935,0.553214619885,0.538461538462,0.04,-0.06,0.06,0.04,0.045,0.564287051229], { threshold: 0.55 }],
+    final: [[[6001, 6000, L16]],
+      [1,0.500041663195,0.500041663195,0.500041663195,0.500041663195,0.500041663195,0.500041663195,0.500041663195,0,0,0,12001,12001,12001,1], { status: 'final' }]
+  };
+  var LIVE = 'status,phase,baseMixed,counted,pYes,finalShare,remaining,totalVotes,countedFraction,baseShare,observed,lateExpected,leans,trailingNeeds,sims,draws';
+  Object.keys(CASES).forEach(function (k) {
+    var c = CASES[k], r = M.forecast(data(c[0], c[2]), FROZEN), q = r.finalShare, got = [r.pYes];
+    [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95].forEach(function (p) { got.push(q[p]); });
+    [0.1, 0.5, 0.9].forEach(function (p) { got.push(r.remaining[p]); });
+    [0.1, 0.5, 0.9].forEach(function (p) { got.push(r.totalVotes[p]); });
+    got.push(r.countedFraction);
+    if (r.status === 'live') got.push(r.baseShare, r.lateExpected, r.leans.electionNight.mean, r.leans.electionNight.sd, r.leans.postElection.mean, r.leans.postElection.sd, r.trailingNeeds.share);
+    assert.strictEqual(got.length, c[1].length, k);
+    got.forEach(function (x, i) { near(x, c[1][i], 1e-9 * Math.max(1, Math.abs(x)), k + ' number ' + i); });
+    // Every old field is still there; the call only adds remainingMax, threshold and counted.t.
+    var old = r.status === 'live' ? LIVE.split(',') : 'status,phase,pYes,finalShare,remaining,totalVotes,countedFraction,counted,trailingNeeds'.split(',');
+    assert.deepStrictEqual(Object.keys(r).filter(function (x) { return old.indexOf(x) < 0; }).sort(), ['remainingMax', 'threshold']);
+    assert.deepStrictEqual(Object.keys(r.counted), ['yes', 'no', 'n', 'share', 'when', 't']);
+  });
+});

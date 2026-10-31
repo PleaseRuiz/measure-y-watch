@@ -89,7 +89,8 @@ a{color:var(--accent)}
 .hero-num{font-size:clamp(52px,8.4vw,84px);font-weight:800;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
 .hero-label{font-size:17px;color:var(--muted)}
 .hero-sub{margin:10px 0 0;font-size:15px;color:var(--muted)}
-.dial-foot{margin-top:18px;display:flex;justify-content:center}
+.dial-foot{margin-top:18px;display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
+.dial-foot .chip-btn[hidden]{display:none}
 .chip-btn{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--ink-2);font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
 .chip-btn:hover{border-color:var(--muted)}
 .chip-btn .state{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.06em;color:var(--muted)}
@@ -200,7 +201,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
         <circle class="hub" cx="200" cy="225" r="15"/>
       </svg>
       </div>
-      <p class="zone mono" id="zone">LOADING</p>
+      <p class="zone mono" id="zone" tabindex="-1">LOADING</p>
       <div class="hero" aria-live="polite">
         <span class="hero-num" id="heroNum">–</span>
         <span class="hero-label" id="heroLabel">YES so far</span>
@@ -208,6 +209,7 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
       <p class="hero-sub" id="heroSub">Pass line: 50% + 1 vote</p>
       <div class="dial-foot">
         <button type="button" class="chip-btn" id="wobbleBtn" aria-pressed="true">Wobble <span class="state" id="wobbleState">ON</span></button>
+        <button type="button" class="chip-btn" id="confettiBtn" aria-pressed="true" hidden>Confetti <span class="state">ON</span></button>
       </div>
     </section>
 
@@ -599,16 +601,18 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     celebrate(PARTY_PREVIEW || (!DEMO && !REHEARSAL && d.status === 'final' && share !== null && share > T));
   }
 
-  // Confetti when the county certifies a pass: once per visit, and again on a tap of MEASURE Y
-  // PASSED (js/party.js; never for readers who asked for less motion). ?demo=1&party=1 previews it.
-  var PARTY_PREVIEW = DEMO && params.get('party') === '1';
-  var party = { on: false, thrown: false };
+  // Confetti when the county certifies a pass: it pops once per visit, then a few pieces keep drifting
+  // down, and the Confetti chip under the needle stops them. A tap of MEASURE Y PASSED throws more
+  // (js/party.js; never for readers who asked for less motion). ?demo=1&party=1 previews it, and so does
+  // ?demo=1&party=final, the forecast tab's certified preview, so the Live count link from it celebrates too.
+  var PARTY_PREVIEW = DEMO && /^(1|final)$/.test(params.get('party') || '');
+  var party = { on: false };
   function throwConfetti() {
     try { return !!(window.MYWParty && window.MYWParty.burst()); } catch (e) { return false; } // decoration only
   }
   function celebrate(on) {
     party.on = on;
-    if (on && !party.thrown) party.thrown = throwConfetti();
+    try { if (window.MYWParty) window.MYWParty.celebrate(on); } catch (e) {} // decoration only
   }
   el.zone.addEventListener('click', function () { if (party.on) throwConfetti(); });
 

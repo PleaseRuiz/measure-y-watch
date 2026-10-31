@@ -39,10 +39,13 @@ GitHub app or github.com: **Actions → Update results → Run workflow** (branc
 - **Allow decrease**: tick only when the county really lowered a count, or to fix a
   manual typo. Applies to that one run. If the county itself lowered a count while you were
   typing entries by hand, also turn the forecast tab off (see below).
-- **Certified**: tick once, after the county certifies the count (Dec 3). The page then shows
-  CERTIFIED and the forecast tab shows the final result. It's refused before Nov 17. If it was
-  ticked by mistake, edit `data/results.json` on `main` (github.com, pencil icon) and change
-  `"status": "final"` to `"status": "counting"`; the site republishes in a couple of minutes.
+- **Certified**: tick once, after the county certifies the count (Dec 3). The run sets
+  `"status": "final"` and writes `"certified_at"` (the run's time) in `data/results.json`. The page
+  then shows CERTIFIED and the forecast tab shows the final result, with the certification date from
+  `certified_at` on its front page (without the field the front page says FINAL, with no date). It's
+  refused before Nov 17. If it was ticked by mistake, edit `data/results.json` on `main` (github.com,
+  pencil icon) and change `"status": "final"` to `"status": "counting"`; the site republishes in a
+  couple of minutes, and the next Certified run writes a fresh `certified_at`.
 - **Keepalive**: leave it unticked. The keep-alive and the watchdog's late-read restarts tick it, so
   their runs republish only when the live page is behind; a hand-started run (and the watchdog's
   republish) always republishes.
@@ -121,12 +124,44 @@ the county's official results.
 - Sample numbers (`?demo=1`, `?rehearsal=1`) and a certified count never show the banner.
 
 ### If Measure Y passes
-- The forecast tab puts a party hat on Peanut and drops confetti (once per visit) when Peanut is
-  more than 99% sure on a county update from Thu Nov 5 on. Election-night counts don't count.
-- When the county certifies a pass, both tabs drop confetti and Peanut keeps the hat. A tap on
-  Peanut, or on MEASURE Y PASSED, drops more.
-- Nothing happens if Measure Y fails. Readers whose device asks for less motion get the hat but no
-  confetti. `?demo=1&party=1` previews it on sample numbers. The confetti is `js/party.js`.
+- **Party (forecast tab):** when Peanut is more than 99% sure on a count posted from Thu Nov 5 on,
+  Peanut wears a party hat (it bobs twice and settles), confetti pops once per visit, then a few
+  pieces keep drifting down. Election-night counts don't count.
+- **Confirmed to pass (forecast tab):** Peanut calls Measure Y when, on a count posted from Thu Nov 5
+  on, YES leads by more than Peanut's worst case for the votes still out: 4.5 standard deviations above
+  its turnout estimate (`r.remainingMax`, from the fitted total behind the simulations, so it does not
+  move with the random seed; `PeanutModel.confirmedPass`). YES then wins even if every remaining vote
+  were a NO. Peanut grows into the hero of the card and holds up an extra edition of The Daily Peanut
+  (MEASURE Y PASSES) in front of the needle, which stays pinned at YES. The readout says "Confirmed to
+  pass / Passes / Peanut's call, not yet certified", with the lead, the votes still out ("at most" is
+  the bound behind the call), the certification date (by Thu, Dec 3; "still to certify" once that
+  passes) and "a mathematical certainty under Peanut's methodology". A count the schedule says is
+  complete still carries the schedule's last-point uncertainty (a little over 2% of the count
+  on certification day), so a lead smaller than that is not called; the county's certified result
+  covers that. The methodology explains the rule under "When Peanut calls it". The call isn't sticky:
+  a correction can take it back, and the page follows.
+- **Checking the call:** `node tests/confirm.js 1000 matched`, `1000 wild`, `600 late-swing` and
+  `600 slow-count` replay made-up elections (the worlds of `tests/calibrate.js`) and report the calls,
+  wrong calls, how often more votes were really left than "at most", and when passing races were first
+  called. The numbers quoted on the forecast tab come from those four runs: a call in 234 + 202 + 202 +
+  144 = 782 of 3,200 elections, none wrong; in the slow-count world (7 points less counted at every
+  release) the votes really left topped the bound in 45 of 166 calls, and in 6 of those every remaining
+  vote being a NO would have sunk YES. `node tests/backtest.js` adds that at its 32 real early counts
+  the bound was 1.4 to 2.3 times the votes really left, with no call; 31 of them are election-night
+  counts where the rule cannot fire, so the bound is untested on real late counts.
+- **Certified pass:** the forecast tab shows the final edition (FINAL, "It's official"; its
+  certification date comes from `certified_at`, never from the count's own time) with the existing
+  certified readout; both tabs pop confetti, then the gentle trickle. A tap on Peanut, or on
+  MEASURE Y PASSED, throws one more burst.
+- **The Confetti chip** (both tabs) shows only while celebrating and turns the trickle and the pops
+  off; the choice is remembered (`localStorage` key `myw-confetti`). Readers whose device asks for
+  less motion get the hat and the front page, but nothing moves and no confetti falls.
+- Nothing happens if Measure Y fails, and a paused forecast never celebrates. `?demo=1&party=1`
+  previews the confirmed state on sample numbers (the page carries a SAMPLE stamp and the gauge's
+  accessible name starts with "Sample data."), `?demo=1&party=final` the certified one; the Live count
+  tab celebrates on either. The confetti
+  is `js/party.js`; the front page is drawn by hand inside `forecast.html` (no fonts to credit: the
+  masthead and headline are paths, the small type uses the page's own fonts and the system serif).
 
 ### FYI issues
 The workflows post status issues on GitHub (label `election-night-status`) that mention the

@@ -14,8 +14,9 @@ PRACTICE=1 (rehearsal only) writes data/rehearsal.json instead and never fetches
 KEEPALIVE=true with CACHE_HIT=false (a run the keep-alive or the watchdog started, when the Actions
 cache didn't restore .last-fetch) skips the county read: without the last fetch time the gap guard
 can't work, so only scheduled runs read the county then.
-MARK_CERTIFIED=true (hand-started run) marks the count final once the county has certified it.
-It is refused before CERTIFY_AFTER, so a mis-tap on election night can't end the count early.
+MARK_CERTIFIED=true (hand-started run) marks the count final once the county has certified it, and
+records the run's time as certified_at (the forecast tab's final edition prints that date). It is
+refused before CERTIFY_AFTER, so a mis-tap on election night can't end the count early.
 
 Feeds: the county results page (HTML) normally. After the page fails (can't be fetched, read or
 checked), the NEXT run reads the county's summary XML instead: still one fetch per run, behind the
@@ -764,6 +765,8 @@ def update(run, now):
                               "the county certifies on Dec 3")
         if (latest.get("yes") or 0) + (latest.get("no") or 0) == 0:
             raise CheckFailed("can't mark the count certified before any votes are counted")
+        if not was_final:
+            results["certified_at"] = now.isoformat()  # when the certification was recorded here
         results["status"] = "final"
         print("Marked the count as certified")
 

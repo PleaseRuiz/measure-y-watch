@@ -2,9 +2,10 @@
 //
 // tests/history-cases.json holds 23 local measures with a partial count from election
 // night (or the next days) and the certified result, mapped onto this year's release times.
-// For each partial count we run the forecast and check where the real result landed.
-// Each measure has its own size, so the turnout assumption is centered 10% away from the
-// true total (alternating high and low), roughly as wrong as a real turnout guess.
+// For each partial count we run the forecast and check where the real result landed, and
+// whether the votes really left ever topped Peanut's "at most" (r.remainingMax, the bound
+// behind its call). Each measure has its own size, so the turnout assumption is centered 10%
+// away from the true total (alternating high and low), roughly as wrong as a real turnout guess.
 //
 //   node tests/backtest.js [verbose]
 
@@ -14,7 +15,7 @@ var P = require('../data/peanut-priors.json');
 var cases = require('./history-cases.json');
 var verbose = process.argv[2] === 'verbose';
 
-var rows = [];
+var rows = [], bounds = [];
 cases.forEach(function (c, ci) {
   var total = c.final[0] + c.final[1], actual = c.final[0] / total;
   var priors = JSON.parse(JSON.stringify(P));
@@ -24,11 +25,12 @@ cases.forEach(function (c, ci) {
     var r = M.forecast({ threshold: c.threshold, history: hist }, priors, { sims: 20000, keepDraws: true });
     var below = 0;
     r.draws.forEach(function (d) { if (d < actual) below++; });
-    var q = r.finalShare, last = c.reports[i];
+    var q = r.finalShare, last = c.reports[i], left = total - r.counted.n;
+    bounds.push({ left: left, max: r.remainingMax, gate: r.counted.t >= M.confirmFrom, called: M.confirmedPass(r) });
     rows.push({
       measure: c.measure, kind: c.kind, stage: i === 0 ? 'first update we have' : 'later update',
       counted: (last[0] + last[1]) / total, now: last[0] / (last[0] + last[1]), actual: actual,
-      q: q, pit: below / r.draws.length, p: r.pYes, passed: actual > c.threshold ? 1 : 0, threshold: c.threshold
+      q: q, pit: below / r.draws.length, p: r.pYes, passed: actual > c.threshold ? 1 : 0, threshold: c.threshold, left: left, max: r.remainingMax
     });
   });
 });
@@ -50,7 +52,8 @@ function summarize(sel, name) {
 
 if (verbose) rows.forEach(function (x) {
   console.log('  ' + (x.measure + '                                                  ').slice(0, 58) + ' counted ' + (100 * x.counted).toFixed(0).padStart(3) + '% | then ' + (100 * x.now).toFixed(1) +
-    '% -> final ' + (100 * x.actual).toFixed(1) + '% | forecast ' + (100 * x.q[0.5]).toFixed(1) + ' [' + (100 * x.q[0.1]).toFixed(1) + '-' + (100 * x.q[0.9]).toFixed(1) + '] | chance > ' + (100 * x.threshold).toFixed(0) + '%: ' + (100 * x.p).toFixed(0) + '% (' + (x.passed ? 'passed' : 'failed') + ')');
+    '% -> final ' + (100 * x.actual).toFixed(1) + '% | forecast ' + (100 * x.q[0.5]).toFixed(1) + ' [' + (100 * x.q[0.1]).toFixed(1) + '-' + (100 * x.q[0.9]).toFixed(1) + '] | chance > ' + (100 * x.threshold).toFixed(0) + '%: ' + (100 * x.p).toFixed(0) + '% (' + (x.passed ? 'passed' : 'failed') + ')' +
+    ' | left ' + x.left + ', at most ' + x.max);
 });
 console.log('priors ' + P.version);
 summarize(rows, 'All forecasts');
@@ -58,3 +61,9 @@ summarize(rows.filter(function (x) { return x.kind === 'property tax or school b
 summarize(rows.filter(function (x) { return x.kind !== 'property tax or school bond'; }), 'Other measures');
 summarize(rows.filter(function (x) { return x.stage === 'first update we have'; }), 'At the first update');
 summarize(rows.filter(function (x) { return x.stage !== 'first update we have'; }), 'At a later update');
+// Peanut's "at most" against the votes really left: the rule only fires from Thu Nov 5 on, and almost all of these
+// counts are from election night, so this checks the bound, not the call, and says nothing about real late counts.
+var ratios = bounds.filter(function (b) { return b.left > 0; }).map(function (b) { return b.max / b.left; });
+console.log('Peanut\'s "at most" vs the votes really left: within the bound at ' + bounds.filter(function (b) { return b.left <= b.max; }).length + ' of ' + bounds.length +
+  ' counts, ' + Math.min.apply(null, ratios).toFixed(2) + ' to ' + Math.max.apply(null, ratios).toFixed(2) + ' times the votes left | counts from Thu Nov 5 on: ' +
+  bounds.filter(function (b) { return b.gate; }).length + ' | calls: ' + bounds.filter(function (b) { return b.called; }).length);

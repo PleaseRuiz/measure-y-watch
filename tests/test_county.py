@@ -1085,6 +1085,47 @@ class AlertTest(RunTest):
         self.assertEqual(self.status()["reason"], CANT_READ)
 
 
+class CertifiedTest(RunTest):
+    """The Certified run records when the count was marked final; nothing else writes certified_at."""
+
+    DEC3 = datetime(2026, 12, 3, 17, 30, tzinfo=PACIFIC)  # the hand-started run after the county certifies
+
+    def test_normal_runs_never_write_certified_at(self):
+        code, out, log = self.run_update(T0)
+        self.assertRun((code, out, log), 0, "ok", "html", "no")
+        self.assertNotIn("certified_at", self.results())
+        self.county.html = page(yes="6,005", no="5,675", updated="12/3/2026 4:45:00 PM", ballots="192,720")
+        code, out, log = self.run_update(self.DEC3)
+        self.assertRun((code, out, log), 0, "ok", "html", "no")
+        results = self.results()
+        self.assertEqual(results["status"], "counting")
+        self.assertNotIn("certified_at", results)
+
+    def test_the_certified_run_writes_certified_at_and_later_reads_keep_it(self):
+        self.run_update(T0)
+        self.county.html = page(yes="6,005", no="5,675", updated="12/3/2026 4:45:00 PM", ballots="192,720")
+        code, out, log = self.run_update(self.DEC3, MARK_CERTIFIED="true", EVENT="workflow_dispatch")
+        self.assertRun((code, out, log), 0, "ok", "html", "no")
+        self.assertEqual(out["message"],
+                         "Update results: county reading, county update 2026-12-03T16:45:00-08:00, marked certified")
+        results = self.results()
+        self.assertEqual((results["status"], results["certified_at"]), ("final", "2026-12-03T17:30:00-08:00"))
+        self.assertEqual(results["latest"]["county_updated"], "2026-12-03T16:45:00-08:00")
+        # A read that finds nothing new, one that adds a count, and a second Certified tick all keep the time.
+        code, out, log = self.run_update(self.DEC3 + timedelta(minutes=10))
+        self.assertRun((code, out, log), 0, "ok", "html", "no")
+        self.assertIn("results.json unchanged", log)
+        self.county.html = page(yes="6,006", no="5,675", updated="12/3/2026 5:35:00 PM", ballots="192,721")
+        code, out, log = self.run_update(self.DEC3 + timedelta(minutes=20))
+        self.assertRun((code, out, log), 0, "ok", "html", "no")
+        code, out, log = self.run_update(self.DEC3 + timedelta(minutes=30), MARK_CERTIFIED="true", EVENT="workflow_dispatch")
+        self.assertRun((code, out, log), 0, "ok", "html", "no")
+        self.assertIn("results.json unchanged", log)
+        results = self.results()
+        self.assertEqual((results["status"], results["certified_at"], results["latest"]["yes"], len(results["history"])),
+                         ("final", "2026-12-03T17:30:00-08:00", 6006, 4))
+
+
 class ManualEntryTest(RunTest):
     """Manual entries work as before, and leave the county state and data/status.json alone."""
 
