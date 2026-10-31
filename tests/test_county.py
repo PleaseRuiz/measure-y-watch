@@ -44,7 +44,7 @@ ZERO_XML = (FIXTURES / "summary_20_zero.xml").read_bytes().decode("utf-8")  # ke
 LAST_MODIFIED = "Mon, 26 Oct 2026 18:48:46 GMT"  # summary_20.xml's header when it was saved (Oct 29)
 T0 = datetime(2026, 11, 3, 20, 12, tzinfo=PACIFIC)  # election night, Tue 8:12 PM: the run after the first report
 RUN_ENV = ("EVENT", "MANUAL_YES", "MANUAL_NO", "MANUAL_COUNTY_UPDATED", "ALLOW_DECREASE", "MARK_CERTIFIED",
-           "GITHUB_OUTPUT", "PRACTICE")
+           "GITHUB_OUTPUT", "PRACTICE", "KEEPALIVE", "CACHE_HIT")
 START = {  # data/results.json as it stood before election night
     "status": "pre", "contest": TITLE, "threshold": 0.5, "expected_votes": None, "source_url": county.SOURCE_URL,
     "latest": {"yes": 0, "no": 0, "county_updated": "2026-10-26T11:48:45-07:00", "county_ballots_counted": 0,
@@ -52,9 +52,9 @@ START = {  # data/results.json as it stood before election night
 }
 START["history"] = [dict(START["latest"])]
 
-# data/status.json reasons, word for word from the brief
+# data/status.json reasons, word for word
 NOT_RESPONDING = "The county's results site isn't responding to our automatic updates right now."
-CANT_READ = "The county changed how it publishes results, and our automatic reader can't read it yet."
+CANT_READ = "Our automatic reader can't read the county's results right now."
 CONFIRMING = "The county revised its numbers. We're confirming the change before showing it."
 
 
@@ -556,24 +556,38 @@ class FeedStateTest(RunTest):
         self.set_state(feed="xml", retry=ts(T0), last_ok=ts(T0) - 600)
         self.county.html = renamed(PAGE)
         self.assertRun(self.run_update(T0), 1, "failed", "html", "wait")
-        self.assertEqual(self.state(), state("xml", ts(T0) + 1800, 1, ts(T0) - 600, {"feed": "html", "kind": "parse",
+        # The failed retry doesn't count as a failed read: the XML is still reading.
+        self.assertEqual(self.state(), state("xml", ts(T0) + 1800, 0, ts(T0) - 600, {"feed": "html", "kind": "parse",
                                                                                     "at": ts(T0)}))
+        self.assertIn("- Readers: the site still shows the last saved numbers\n", self.diagnosis() + "\n")
         self.assertRun(self.run_update(T0 + timedelta(minutes=5)), 0, "ok", "xml", "no")
         self.assertEqual(self.county.calls, ["html", "xml"])
 
-    def test_xml_failure_goes_back_to_the_page(self):
+    def test_one_xml_failure_reads_the_xml_again(self):
         self.set_state(feed="xml", retry=ts(T0) + 1200, last_ok=ts(T0) - 300)
-        self.county.xml = http_error(404, county.XML_URL)
+        self.county.html = renamed(PAGE)  # the page is still unreadable
+        self.county.xml = timeout()
         self.assertRun(self.run_update(T0), 1, "failed", "xml", "wait")
-        self.assertEqual(self.state(), state("html", 0, 1, ts(T0) - 300, {"feed": "xml", "kind": "fetch", "at": ts(T0)}))
+        self.assertEqual(self.state(), state("xml", ts(T0) + 1200, 1, ts(T0) - 300, {"feed": "xml", "kind": "fetch", "at": ts(T0)}))
+        self.county.xml = feed_xml(xml(yes=4105, no=3702, ballots=121880), pt(20, 15, 10))
+        self.assertRun(self.run_update(T0 + timedelta(minutes=5)), 0, "ok", "xml", "no")
+        self.assertEqual(self.county.calls, ["xml", "xml"])
+        self.assertIsNone(self.status())  # the backup kept working: no banner
+
+    def test_an_xml_failure_right_after_another_failed_read_goes_back_to_the_page(self):
+        self.set_state(feed="xml", retry=ts(T0) + 1200, failures=1, last_ok=ts(T0) - 600)
+        self.county.xml = http_error(404, county.XML_URL)
+        self.assertRun(self.run_update(T0), 1, "failed", "xml", "now")
+        self.assertEqual(self.state(), state("html", 0, 2, ts(T0) - 600, {"feed": "xml", "kind": "fetch", "at": ts(T0)}))
         self.assertRun(self.run_update(T0 + timedelta(minutes=5)), 0, "ok", "html", "no")
         self.assertEqual(self.county.calls, ["xml", "html"])
 
-    def test_xml_that_parses_but_is_wrong_also_goes_back(self):
+    def test_xml_that_parses_but_is_wrong_counts_as_an_xml_failure(self):
         self.set_state(feed="xml", retry=ts(T0) + 1200)
         self.county.xml = feed_xml(xml(yes=0, no=0).replace(TITLE, "City of Belmont, Measure Y"), T0)
         self.assertRun(self.run_update(T0), 1, "failed", "xml", "wait")
-        self.assertEqual((self.state()["feed"], self.state()["last_fail"]["kind"]), ("html", "parse"))
+        self.assertEqual((self.state()["feed"], self.state()["failures"], self.state()["last_fail"]["kind"]),
+                         ("xml", 1, "parse"))
 
     def test_unreadable_state_counts_as_the_default(self):
         for junk in ("", "not json", "[]", '{"feed": "ftp", "failures": "many", "last_ok": -5}', '{"html_retry_after": NaN}',
@@ -657,6 +671,29 @@ class OneFetchTest(RunTest):
         self.assertEqual(self.county.calls, ["html", "html"])
 
 
+    def test_a_keepalive_run_without_the_cache_skips_the_county(self):
+        # Without .last-fetch from the cache the gap guard can't work, so only scheduled runs read.
+        code, out, log = self.run_update(T0, EVENT="workflow_dispatch", KEEPALIVE="true", CACHE_HIT="false")
+        self.assertRun((code, out, log), 0, "skipped", "none", "no")
+        self.assertIn("only scheduled runs read the county", log)
+        self.assertEqual(self.county.calls, [])
+        self.assertRun(self.run_update(T0, EVENT="workflow_dispatch", KEEPALIVE="true", CACHE_HIT="true"),
+                       0, "ok", "html", "no")
+        self.assertRun(self.run_update(T0 + timedelta(minutes=5), CACHE_HIT="false"), 0, "ok", "html", "no")
+        self.assertRun(self.run_update(T0 + timedelta(minutes=10), EVENT="workflow_dispatch", CACHE_HIT="false"),
+                       0, "ok", "html", "no")  # a hand-started run reads too
+        self.assertEqual(self.county.calls, ["html", "html", "html"])
+
+    def test_the_failure_output_tells_a_county_read_from_the_rest(self):
+        code, out, log = self.run_update(T0)
+        self.assertEqual((code, out["failure"]), (0, "none"))
+        self.county.html = http_error(503)
+        code, out, log = self.run_update(T0 + timedelta(minutes=5))
+        self.assertEqual((code, out["failure"], out["alert"]), (1, "read", "wait"))
+        (self.dir / "config.json").write_text("{not json")
+        code, out, log = self.run_update(T0 + timedelta(minutes=10))
+        self.assertEqual((code, out["failure"], out["alert"]), (1, "run", "now"))
+
 class StatusTest(RunTest):
     def test_a_good_read_leaves_a_missing_status_missing(self):
         code, out, log = self.run_update(T0)
@@ -702,7 +739,7 @@ class StatusTest(RunTest):
         self.assertRun((code, out, log), 1, "failed", "xml", "now")
         self.assertEqual(self.status(), {"state": "broken", "reason": CANT_READ, "since": "2026-11-03T20:17:00-08:00"})
 
-    def test_the_reason_follows_the_last_failure_and_keeps_its_since(self):
+    def test_a_new_reason_needs_two_failed_reads_in_a_row_that_agree(self):
         self.county.html = http_error(503)
         self.county.xml = timeout()
         self.run_update(T0)
@@ -710,8 +747,37 @@ class StatusTest(RunTest):
         self.assertEqual(self.status()["reason"], NOT_RESPONDING)
         self.county.html = renamed(PAGE)  # the site answers again, in a form the reader can't read
         code, out, log = self.run_update(T0 + timedelta(minutes=10))
+        self.assertEqual(out["status_changed"], "false")  # one read doesn't change the reason
+        self.assertEqual(self.status()["reason"], NOT_RESPONDING)
+        self.county.xml = feed_xml(xml().replace(TITLE, "City of Belmont, Measure Y"), T0 + timedelta(minutes=14))
+        code, out, log = self.run_update(T0 + timedelta(minutes=15))  # a second unreadable read in a row
         self.assertEqual((out["status_changed"], out["message"]), ("true", "Update site status: broken"))
         self.assertEqual(self.status(), {"state": "broken", "reason": CANT_READ, "since": "2026-11-03T20:17:00-08:00"})
+
+    def test_feeds_failing_in_different_ways_dont_flip_the_reason(self):
+        self.county.html = renamed(PAGE)
+        self.county.xml = http_error(503, county.XML_URL)
+        written = []
+        for i in range(12):
+            code, out, log = self.run_update(T0 + timedelta(minutes=5 * i))
+            if out["status_changed"] == "true":
+                written.append(self.status()["reason"])
+        self.assertEqual(written, [NOT_RESPONDING])
+        self.assertEqual(self.status()["state"], "broken")
+
+    def test_a_reply_that_isnt_the_countys_is_not_responding(self):
+        error_page = "<html><head><title>Service Unavailable</title></head><body>Try later</body></html>"
+        self.county.html = error_page
+        self.county.xml = ("", {"Content-Type": "text/xml"})
+        self.assertRun(self.run_update(T0), 1, "failed", "html", "wait")
+        self.assertEqual(self.state()["last_fail"]["kind"], "fetch")
+        self.assertRun(self.run_update(T0 + timedelta(minutes=5)), 1, "failed", "xml", "now")
+        self.assertEqual((self.state()["last_fail"]["kind"], self.status()["reason"]), ("fetch", NOT_RESPONDING))
+        # The county's own page without Measure Y is still unreadable, not unresponsive.
+        self.set_state()
+        self.county.html = renamed(PAGE)
+        self.run_update(T0 + timedelta(minutes=10))
+        self.assertEqual(self.state()["last_fail"]["kind"], "parse")
 
     def test_a_good_read_after_a_break_makes_it_ok(self):
         self.county.html = http_error(503)
@@ -1098,9 +1164,14 @@ class ChecksTest(RunTest):
         self.assertRun((code, out, log), 0, "ok", "xml", "no")
         self.assertEqual(out["changed"], "false")
         self.assertEqual(len(self.results()["history"]), 2)
-        # A real new update with the same Measure Y numbers (more ballots elsewhere) is saved.
-        self.county.xml = feed_xml(xml(yes=3412, no=2988, ballots=99001), pt(20, 14))
+        # Ballots counted don't decide it: the feeds may total them differently.
+        self.county.xml = feed_xml(xml(yes=3412, no=2988, ballots=98451), pt(20, 10, 47))
         code, out, log = self.run_update(T0 + timedelta(minutes=15))
+        self.assertEqual(out["changed"], "false")
+        self.assertEqual(len(self.results()["history"]), 2)
+        # The same Measure Y numbers more than 10 minutes later are a new county update, and are saved.
+        self.county.xml = feed_xml(xml(yes=3412, no=2988, ballots=99001), pt(20, 21))
+        code, out, log = self.run_update(T0 + timedelta(minutes=20))
         self.assertEqual(out["changed"], "true")
         self.assertEqual(len(self.results()["history"]), 3)
 
@@ -1350,7 +1421,7 @@ class ScriptTest(unittest.TestCase):
     def test_push_run(self):
         code, out, log = self.run_script("up", event="push")
         self.assertEqual((code, out), (0, {"changed": "false", "status_changed": "false", "read": "none", "alert": "no",
-                                           "feed": "none"}), log)
+                                           "feed": "none", "failure": "none"}), log)
         self.assertFalse((self.dir / ".county-state.json").exists())
 
     def test_a_good_read_then_a_skip(self):

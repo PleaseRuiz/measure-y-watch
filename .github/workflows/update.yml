@@ -9,6 +9,14 @@ on:
     # Thu Nov 5 to Mon Nov 16, 8:04 AM to 5:54 PM Pacific: every 10 minutes.
     - cron: "4-54/10 16-23 5-16 11 *"
     - cron: "4-54/10 0-1 6-17 11 *"
+    # Between those windows, one read an hour (Wed Nov 4 5:07 AM to Tue Nov 17 7:07 AM), then one
+    # a day at 5:07 PM until Thu Dec 3: a site status set by the last reads of a window clears by
+    # itself, and a county update posted outside the windows still reaches the page.
+    - cron: "7 13-23 4 11 *"
+    - cron: "7 0-15 5 11 *"
+    - cron: "7 2-15 6-17 11 *"
+    - cron: "7 1 18-30 11 *"
+    - cron: "7 1 1-4 12 *"
   workflow_dispatch:
     inputs:
       yes:
@@ -34,7 +42,7 @@ on:
         type: boolean
         default: false
       keepalive:
-        description: "Republish only if the live page is behind (the keep-alive and the watchdog tick this)"
+        description: "Republish only if the live page is behind (the keep-alive and the watchdog's late-read restarts tick this)"
         required: false
         type: boolean
         default: false
@@ -65,7 +73,11 @@ jobs:
     outputs:
       deploy: ${{ steps.upload.outcome == 'success' }}
     steps:
+      # main as it is now, not the commit this run was queued with: a run that waited in line
+      # behind another must not publish data older than what that run just published.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
@@ -87,6 +99,7 @@ jobs:
       # A cache restores only with the path list it was saved with, so caches saved before
       # .county-state.json existed (.last-fetch alone) need their own step.
       - name: Restore last county fetch time (older cache)
+        id: cache_old
         if: github.event_name != 'push' && steps.cache.outputs.cache-matched-key == ''
         uses: actions/cache/restore@v4
         with:
@@ -103,6 +116,9 @@ jobs:
           MANUAL_COUNTY_UPDATED: ${{ inputs.county_updated }}
           ALLOW_DECREASE: ${{ inputs.allow_decrease }}
           MARK_CERTIFIED: ${{ inputs.certified }}
+          # Runs the keep-alive or the watchdog start skip the county read when the cache missed.
+          KEEPALIVE: ${{ inputs.keepalive }}
+          CACHE_HIT: ${{ steps.cache.outputs.cache-matched-key != '' || steps.cache_old.outputs.cache-matched-key != '' }}
         run: python scraper/update.py
 
       - name: Save last county fetch time
@@ -115,18 +131,44 @@ jobs:
           key: last-fetch-${{ github.run_id }}
 
       # Status issues are FYI notes for the owner (ops/status.py). They never fail the run, and
-      # they run even when Read results failed. Push events never post them.
+      # they run even when Read results failed. Push events never post them. STATUS_QUICK keeps a
+      # slow GitHub API from holding up the publish: each call gets one short try.
       - name: Post an FYI issue that the county can't be read
-        if: always() && github.event_name != 'push' && steps.read.outputs.alert == 'now'
+        if: always() && github.event_name != 'push' && steps.read.outputs.alert == 'now' && steps.read.outputs.failure == 'read'
         continue-on-error: true
         timeout-minutes: 2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATUS_QUICK: "1"
         run: |
           if [ ! -s diagnosis.md ]; then
             echo "Update results couldn't read the county's results. The run log has the details." > diagnosis.md
           fi
           python ops/status.py open update-failed diagnosis.md
+
+      # A failure outside a county read: a repository file, a manual entry or a bug (or Read results
+      # stopped before saying what failed).
+      - name: Post an FYI issue that the run failed
+        if: always() && github.event_name != 'push' && steps.read.outcome == 'failure' && steps.read.outputs.failure != 'read'
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATUS_QUICK: "1"
+        run: |
+          if [ ! -s diagnosis.md ]; then
+            echo "Update results failed before it could say why. The run log has the details." > diagnosis.md
+          fi
+          python ops/status.py open run-failed diagnosis.md
+
+      - name: Close the run-failed FYI issue after a run that works
+        if: always() && github.event_name != 'push' && steps.read.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATUS_QUICK: "1"
+        run: python ops/status.py resolve run-failed "Update results ran again without a problem."
 
       # Only a county read closes it: a manual entry doesn't show that the county reads again.
       - name: Close the FYI issue after a good county read
@@ -135,6 +177,7 @@ jobs:
         timeout-minutes: 2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATUS_QUICK: "1"
           FEED: ${{ steps.read.outputs.feed }}
         run: |
           case "$FEED" in
@@ -170,6 +213,7 @@ jobs:
         timeout-minutes: 2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATUS_QUICK: "1"
         run: python ops/engine_alert.py data/results.json
 
       - name: Check whether the live page is behind
@@ -179,7 +223,8 @@ jobs:
           KEEPALIVE: ${{ inputs.keepalive }}
         run: |
           # A hand-started run always republishes, so it can also repair a failed deploy.
-          # Runs started by the keep-alive or the watchdog (keepalive ticked) republish only when behind.
+          # Runs the keep-alive and the watchdog's late-read restarts start (keepalive ticked) republish
+          # only when behind; the watchdog's republish runs leave it unticked, so they always republish.
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$KEEPALIVE" != "true" ]; then
             echo "Hand-started run; deploying"
             echo "behind=true" >> "$GITHUB_OUTPUT"

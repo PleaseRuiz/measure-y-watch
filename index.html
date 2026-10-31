@@ -437,6 +437,16 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     return EXPECTED.some(function (e) { return now >= e.due && now < e.until && (lastUpd === null || lastUpd < e.from); });
   }
 
+  // The overdue banner says only what this page knows: whether the county or our updates are late,
+  // it can't tell. "from 11:15 PM", or "from Thu 4:31 PM" when that was more than 12 hours ago.
+  var lateTime = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
+  var lateDayTime = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  function lateBanner(now, last) {
+    var reason = last === null ? "The county's first count hasn't reached this page yet."
+      : 'The latest county numbers here are from ' + (now - last < 12 * HOUR ? lateTime : lateDayTime).format(last) + '.';
+    return { head: "Waiting for the county's next update", reason: reason };
+  }
+
   // data/status.json, written by the update workflow when its state changes. A missing file means ok;
   // one that can't be read leaves the last answer standing.
   var PAUSED_REASON = {
@@ -462,8 +472,8 @@ summary{cursor:pointer;font-weight:600;color:var(--ink-2);min-height:28px}
     var d = state.data;
     if (DEMO || REHEARSAL || (d && d.status === 'final')) return null;
     if (state.status.state !== 'ok') return { head: 'Live updates are paused', reason: state.status.reason };
-    if (state.fails >= LOAD_FAILS) return { head: 'Live updates are paused', reason: "We can't load the latest numbers right now." };
-    if (d && overdue(now, lastRelease(d))) return { head: 'Live updates are running late', reason: 'Our automatic updates are running late.' };
+    if (state.fails >= LOAD_FAILS) return { head: "The latest numbers aren't loading", reason: 'This page keeps trying every minute.' };
+    if (d && overdue(now, lastRelease(d))) return lateBanner(now, lastRelease(d));
     return null;
   }
 

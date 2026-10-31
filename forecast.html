@@ -834,7 +834,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
   }
 
   // "paused": true in data/peanut-priors.json turns the forecast off for everyone, open pages included.
-  // So does a problem with the live updates (data/status.json), with the banner's reason.
+  // So does a problem with the live updates (data/status.json): the banner gives the reason.
   function showPaused(reason) {
     view.live = false; view.lo = view.hi = view.p = 0.5;
     setMood('', true); setPointer(0.5); el.band.setAttribute('d', ''); showWobbleButton();
@@ -842,7 +842,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     el.zone.className = 'zone mono'; el.zone.textContent = 'Peanut is taking a break';
     el.heroNum.textContent = '–'; el.heroLabel.textContent = 'forecast paused';
     el.metaLine.textContent = '';
-    if (reason) el.take.textContent = reason;
+    if (reason) el.take.textContent = 'Peanut rests while live updates are paused, not because of what the count shows.';
     else el.take.innerHTML = 'The forecast is paused while we check a problem with the data or the model, not because of what it shows. The <a href="' + LIVE_HREF + '">Live count</a> tab has the actual numbers.';
     el.estBody.innerHTML = '<p class="note" style="margin-top:10px">Back when the forecast is.</p>';
     el.movedBody.innerHTML = '<p class="note" style="margin-top:10px">Back when the forecast is.</p>';
@@ -897,6 +897,16 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     return L.county_updated && L.yes + L.no > 0 ? new Date(L.county_updated).getTime() : null;
   }
 
+  // The overdue banner says only what this page knows: whether the county or our updates are late,
+  // it can't tell. "from 11:15 PM", or "from Thu 4:31 PM" when that was more than 12 hours ago.
+  var lateTime = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
+  var lateDayTime = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  function lateBanner(now, last) {
+    var reason = last === null ? "The county's first count hasn't reached this page yet."
+      : 'The latest county numbers here are from ' + (now - last < 12 * HOUR ? lateTime : lateDayTime).format(last) + '.';
+    return { head: "Waiting for the county's next update", reason: reason };
+  }
+
   var PAUSED_REASON = {
     broken: "Our automatic updates aren't working right now.",
     confirming: "The county revised its numbers. We're confirming the change before showing it."
@@ -932,8 +942,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
     var d = bn.data;
     if (DEMO || REHEARSAL || (d && d.status === 'final')) return null;
     if (bn.status.state !== 'ok') return { head: 'Live updates are paused', reason: bn.status.reason };
-    if (bn.fails >= LOAD_FAILS) return { head: 'Live updates are paused', reason: "We can't load the latest numbers right now." };
-    if (d && overdue(now, lastRelease(d))) return { head: 'Live updates are running late', reason: 'Our automatic updates are running late.' };
+    if (bn.fails >= LOAD_FAILS) return { head: "The latest numbers aren't loading", reason: 'This page keeps trying every minute.' };
+    if (d && overdue(now, lastRelease(d))) return lateBanner(now, lastRelease(d));
     return null;
   }
 

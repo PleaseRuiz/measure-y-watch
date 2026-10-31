@@ -4,15 +4,15 @@
   python ops/status.py resolve <kind> "<one line>"
   python ops/status.py note <kind> <markdown-file>
 
-open     opens the kind's issue (mentioning the owner), or comments on the one already open, but
-         only when the content changed or 30 minutes passed since the last post. Content posted in
-         the last 30 minutes doesn't count as a change, so a problem that flips back and forth
-         isn't repeated.
+open     opens the kind's issue (mentioning the owner), or comments on the one already open: at
+         once when it says something the issue hasn't said yet ("New details."), otherwise only
+         when 30 minutes passed since the last post ("Still the same after 30 minutes."). So a
+         problem that flips between two descriptions isn't posted on every run.
 resolve  comments the line on the kind's open issue and closes it; nothing happens if none is open
 note     posts an issue and closes it at once (preflight results, the drill)
 
-Kinds: update-failed, overdue, site-behind, engine, preflight, drill. At most one open issue per
-kind, labeled election-night-status and kind:<kind> (the labels are created if missing). Every
+Kinds: update-failed, run-failed, overdue, site-behind, engine, preflight, drill. At most one open
+issue per kind, labeled election-night-status and kind:<kind> (the labels are created if missing). Every
 post starts "No action needed." and says what the automation is doing about it, and, when
 data/status.json says broken, that the site is sending readers to the county's results.
 
@@ -26,7 +26,9 @@ from the county's pages, and run status. Text from callers can't mention anyone.
 
 Environment: GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SERVER_URL, GITHUB_RUN_ID, GITHUB_API_URL
 (Actions sets all but the token); ALERT_MENTION overrides who is mentioned (default: the
-repository owner; empty: nobody). Always exits 0. Prints status lines only, never the token.
+repository owner; empty: nobody); STATUS_QUICK=1 (Update results runs, which publish after it)
+gives each API call one try of at most 8 seconds: a missed post is made by the next run.
+Always exits 0. Prints status lines only, never the token.
 """
 
 import hashlib
@@ -41,20 +43,23 @@ import common
 
 LABEL = "election-night-status"
 BOT = "github-actions[bot]"
-KINDS = ("update-failed", "overdue", "site-behind", "engine", "preflight", "drill")
+KINDS = ("update-failed", "run-failed", "overdue", "site-behind", "engine", "preflight", "drill")
 TITLES = {
     "update-failed": "FYI: the county's results can't be read right now",
+    "run-failed": "FYI: an Update results run failed",
     "overdue": "FYI: county reads are running late",
     "site-behind": "FYI: the live page is behind",
     "engine": "FYI: the forecast engine check failed",
     "preflight": "FYI: preflight found a problem",
     "drill": "DRILL: test alert, nothing is wrong, no action needed",
 }
-NOTE_TITLES = {"preflight": "FYI: preflight passed"}
+NOTE_TITLES = {"preflight": "FYI: preflight passed"}  # a note about a problem keeps the kind's TITLES title
 # What the automation is doing about each kind (the first line of every post).
 DOING = {
     "update-failed": "Update results keeps trying on every run and switches to the county's backup data feed "
                      "when the results page can't be read. This closes by itself after the next good read.",
+    "run-failed": "The site keeps showing the last saved numbers, and Update results runs again on its schedule. "
+                  "This closes by itself after the next run that works.",
     "overdue": "The watchdog starts Update results by itself when county reads are late. "
                "This closes by itself once reads are on time.",
     "site-behind": "The watchdog republishes the page by itself. This closes by itself once the live page "
@@ -124,7 +129,7 @@ def site_line():
 
 def compose(kind, text, first, lead="", note=False):
     """A post: the FYI line, what readers see, the caller's text, the mention (new issues only),
-    the run link and the hidden marker."""
+    the run link and the hidden marker. note: worded as the kind's all-clear note."""
     if kind == "drill":
         head = f"**{DRILL_LINE}**"
     else:
@@ -230,12 +235,15 @@ def do_open(gh, kind, text):
         say(f"closed duplicate issue #{extra['number']} ({kind})")
     now = time.time()
     seen = posts(gh, keep)
-    last_hash, last_at = max(seen, key=lambda p: p[1]) if seen else (None, None)
-    recent = {h for h, t in seen if now - t < REPEAT_AFTER}
-    if digest in recent:
+    last_at = max(t for _, t in seen) if seen else None
+    said = {h for h, _ in seen}
+    # Something the issue already said is posted again only once 30 minutes have passed since its
+    # last post, whatever that post said: a problem that alternates between two descriptions (one
+    # per county feed) isn't repeated on every run.
+    if digest in said and last_at is not None and now - last_at < REPEAT_AFTER:
         say(f"issue #{keep['number']} ({kind}) already says this; last post {(now - last_at) / 60:.0f} min ago, no new comment")
         return True
-    changed = last_hash != digest
+    changed = digest not in said
     lead = "New details." if changed else "Still the same after 30 minutes."
     gh.post(f"/issues/{keep['number']}/comments", {"body": compose(kind, text, first=False, lead=lead)})
     say(f"commented on issue #{keep['number']} ({kind}): " + ("content changed" if changed else "30 minutes since the last post"))
@@ -254,8 +262,11 @@ def do_resolve(gh, kind, line):
     return True
 
 
-def do_note(gh, kind, text):
-    number = create_issue(gh, kind, NOTE_TITLES.get(kind, TITLES[kind]), compose(kind, text, first=True, note=True))
+def do_note(gh, kind, text, problem=False):
+    """Post an issue and close it at once. problem: it reports a problem (the kind's title and
+    opening line), not an all-clear (NOTE_TITLES and NOTE_DOING)."""
+    title = TITLES[kind] if problem else NOTE_TITLES.get(kind, TITLES[kind])
+    number = create_issue(gh, kind, title, compose(kind, text, first=True, note=not problem))
     try:
         gh.patch(f"/issues/{number}", {"state": "closed", "state_reason": "completed"})
     except common.ApiError as e:
@@ -265,8 +276,8 @@ def do_note(gh, kind, text):
     return True
 
 
-def post(command, kind, text):
-    """One open, resolve or note. Returns True if it went through. Never raises."""
+def post(command, kind, text, problem=False):
+    """One open, resolve or note (problem: see do_note). Returns True if it went through. Never raises."""
     undone = f"{kind} issue not closed" if command == "resolve" else f"{kind} issue not posted"
     try:
         if kind not in KINDS:
@@ -276,11 +287,12 @@ def post(command, kind, text):
         if action is None:
             say(f"warning: unknown command {command!r}; nothing posted")
             return False
-        gh = common.GitHub()
+        quick = os.environ.get("STATUS_QUICK") == "1"
+        gh = common.GitHub(timeout=8, get_tries=1) if quick else common.GitHub()
         if not gh.ready():
             say(f"warning: GITHUB_TOKEN or GITHUB_REPOSITORY not set; {undone}")
             return False
-        return action(gh, kind, text)
+        return do_note(gh, kind, text, problem) if command == "note" else action(gh, kind, text)
     except common.ApiError as e:
         say(f"warning: GitHub API error ({e}); {undone}")
     except Exception as e:  # a status post must never break a run

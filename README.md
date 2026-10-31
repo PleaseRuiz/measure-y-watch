@@ -19,6 +19,9 @@ Page: https://pleaseruiz.github.io/measure-y-watch/
 
 - Tue Nov 3, 7:57 PM to Wed Nov 4, 4:57 AM: every 5 minutes
 - Thu Nov 5 to Mon Nov 16, 8 AM to 6 PM: every 10 minutes
+- Between those, once an hour (at :07) until Tue Nov 17, 7 AM, then once a day at 5:07 PM until
+  Thu Dec 3. So a banner left by the last reads of a window clears by itself, and a county update
+  posted outside the windows still shows up.
 
 GitHub can start scheduled runs late or skip them. On election night the keep-alive starts a run
 every 5 minutes when none is waiting or running, and in both windows the watchdog checks every 10
@@ -40,8 +43,9 @@ GitHub app or github.com: **Actions → Update results → Run workflow** (branc
   CERTIFIED and the forecast tab shows the final result. It's refused before Nov 17. If it was
   ticked by mistake, edit `data/results.json` on `main` (github.com, pencil icon) and change
   `"status": "final"` to `"status": "counting"`; the site republishes in a couple of minutes.
-- **Keepalive**: leave it unticked. The keep-alive and the watchdog tick it, so their runs republish
-  only when the live page is behind; a hand-started run always republishes.
+- **Keepalive**: leave it unticked. The keep-alive and the watchdog's late-read restarts tick it, so
+  their runs republish only when the live page is behind; a hand-started run (and the watchdog's
+  republish) always republishes.
 
 After a hand-started run, check that it turned green. If it says Cancelled (another run took its
 place in line), start it again.
@@ -78,15 +82,16 @@ the county's official results.
 - **Mon Nov 2, 6 PM: code freeze** (below).
 - **Tue Nov 3, 5:05 PM and 5:15 PM: preflight.** One county read each (the results page, then the
   county's backup data feed), plus a check that the live page matches `main`, the forecast engine
-  works, and Update results, Keep-alive and Watchdog are on. It posts a closed FYI issue with the
-  numbers it read, or an open one that says what failed.
-- **Tue 7:45 PM to Wed 5 AM: the keep-alive.** Every 5 minutes it starts Update results unless a run
+  works, and Update results, Keep-alive and Watchdog are on. It posts an FYI issue, closed at once,
+  with the numbers it read or with what failed.
+- **Tue 7:50 PM to Wed 5 AM: the keep-alive.** Every 5 minutes it starts Update results unless a run
   is already waiting or running, in case GitHub starts scheduled runs late. The county is still read
-  at most once every 4 minutes; an extra run just says "Skipped fetch". After 5.5 hours it starts a
-  fresh Keep-alive run to carry on.
+  at most once every 4 minutes; an extra run just says "Skipped fetch". (If GitHub's cache doesn't
+  bring back the last read time, the runs it starts skip the county read, and only scheduled runs
+  read it.) After 5.5 hours it starts a fresh Keep-alive run to carry on.
 - **Update results** runs on the schedule above. It reads the county's results page. When the page
-  can't be read, the next run reads the county's backup data feed (XML) instead, and goes back to
-  the page within 30 minutes.
+  can't be read, the next run reads the county's backup data feed (XML) instead, and tries the page
+  again every 30 minutes.
 - **The watchdog** runs every 10 minutes, Tue 7:55 PM to Wed 5 AM and Nov 5-16, 8 AM to 6 PM. It never
   reads the county site. It starts Update results when county reads are late (12 minutes at night,
   25 in the daytime), republishes when the live page has been behind `main` for 10 minutes, and runs
@@ -95,36 +100,41 @@ the county's official results.
 ### What readers see when something breaks
 - After 2 failed county reads in a row, the site shows a banner that sends readers to the county's
   official results page and says why: "The county's results site isn't responding to our automatic
-  updates right now." or "The county changed how it publishes results, and our automatic reader
-  can't read it yet." It goes away after the next good read.
+  updates right now." or "Our automatic reader can't read the county's results right now." It goes
+  away after the next good read. (A failed 30-minute retry of the results page doesn't count while
+  the backup feed reads.)
 - When the county lowers YES or NO, the page keeps the saved numbers and says "The county revised
-  its numbers. We're confirming the change before showing it." The next read, about 5 minutes later,
-  saves the new numbers if the county still shows them.
+  its numbers. We're confirming the change before showing it." The next read (about 5 minutes later
+  on election night, 10 in the daytime, up to an hour between the windows) saves the new numbers if
+  the county still shows them.
 - The banner comes from `data/status.json`, which only Update results writes and publishes with the
   page. No file means all is well.
-- Both tabs also show "Live updates are running late" when a scheduled county update hasn't reached
-  the page 30 minutes after it was due on election night (through the midnight update), or 45 minutes
-  after on Nov 5-16. This works even if GitHub itself stalls.
-- They show "We can't load the latest numbers right now" after the page fails to load the numbers 3
-  times in a row.
-- While the banner says updates are paused, the forecast tab rests ("Peanut is taking a break") and
-  comes back by itself. Sample numbers (`?demo=1`, `?rehearsal=1`) and a certified count never show
-  the banner.
+- Both tabs also show "Waiting for the county's next update" (for example "The latest county numbers
+  here are from 11:15 PM.") when a scheduled county update hasn't reached the page 30 minutes after
+  it was due on election night (through the midnight update), or 45 minutes after on Nov 5-16. It
+  doesn't say who is late, because the page can't tell a late county from a stalled update. It shows
+  even if GitHub itself stalls, but on election night not after 3 AM.
+- They show "The latest numbers aren't loading" after the page fails to load the numbers 3 times in a
+  row (it keeps trying every minute).
+- While `data/status.json` pauses the updates (the county can't be read, or a revision is being
+  confirmed), the forecast tab rests ("Peanut is taking a break") and comes back by itself.
+- Sample numbers (`?demo=1`, `?rehearsal=1`) and a certified count never show the banner.
 
 ### FYI issues
 The workflows post status issues on GitHub (label `election-night-status`) that mention the
 repository owner, so the GitHub app can buzz. They're FYI only: each starts "No action needed.",
 says what the automation is doing about it, and closes by itself once things are fine. A problem
-that goes on gets a comment when something changes, or after 30 minutes. Issues are public like run
-logs: they only show county numbers, times and run status.
+that goes on gets a comment when it says something new, or after 30 minutes. Issues are public like
+run logs: they only show county numbers, times and run status.
 
 | Issue | When | What the automation does |
 |---|---|---|
 | The county's results can't be read | 2 failed county reads in a row | Each run tries again, switching to the backup data feed; the site sends readers to the county |
+| An Update results run failed | A run fails outside a county read (a repository file, a manual entry or a bug) | Runs go on as scheduled; the site keeps the last saved numbers; closes after the next run that works |
 | County reads are running late | No county read for 25 minutes (45 in the daytime) | The watchdog starts Update results |
 | The live page is behind | The live page still differs from `main` 25 minutes after it changed | The watchdog republishes the page |
 | The forecast engine check failed | The engine fails on the saved results | Checks again after each update; the Live count tab doesn't use the engine |
-| Preflight | Tue 5:05 and 5:15 PM | Lists what it checked, and what the automation does about any problem |
+| Preflight | Tue 5:05 and 5:15 PM | Lists what it checked, and what the automation does about any problem; closed at once |
 | DRILL | Sun 2:13 PM | Opens and closes; nothing is wrong |
 
 A failed Update results run is still red in the Actions tab, and GitHub may email about it. That's FYI too.
@@ -142,7 +152,8 @@ Actions tab. Scheduled Update results runs and the watchdog go on either way.
 - Thu Nov 5 onward, around 4:30 PM on weekdays: late mail, provisional ballots and signature fixes.
   On property taxes, YES has usually gained in this stretch.
 - The Live count tab only ever shows counted votes. The forecast tab is the just-for-fun one.
-- Dec 3: after the county certifies, Update results runs once with **Certified** ticked.
+- Dec 3: after the county certifies, Update results is started once with **Certified** ticked (see
+  "Run it by hand"). It's the one step that isn't on a schedule.
 
 ### Code freeze: Mon Nov 2, 6 PM Pacific
 After Monday 6 PM Pacific, code and workflows change only to fix something that's broken.

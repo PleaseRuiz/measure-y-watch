@@ -13,9 +13,9 @@ county's backup data feed, or by hand):
 2. The live site serves the same data/results.json and data/status.json as main.
 3. ops/engine_check.js passes on main's results.json.
 4. Update results, Keep-alive and Watchdog are active.
-A pass posts a closed FYI issue with the county numbers read (status.py note) and closes an open
-preflight issue. A failure opens the preflight issue: what failed and what the automation does
-about it; the run then fails too.
+Either way it posts an FYI issue and closes it at once (status.py note): a pass lists the county
+numbers read; a problem says what failed and what the automation does about it. The run fails
+only if the issue couldn't be posted.
 
 The drill (Sun Nov 1 at 2:13 PM, or by hand) posts a closed test issue: "DRILL: test alert,
 nothing is wrong, no action needed." The run fails only if it couldn't be posted.
@@ -190,14 +190,17 @@ def report(t, source, problems, passed, notes):
         lines += ["", run_line]
         for what, _ in problems:
             say(f"Problem: {what}")
-        status.post("open", "preflight", "\n".join(lines))
-        return 1
+        # FYI only, like everything else: posted and closed at once, and the run stays green. Nothing
+        # would close an open one, and a red run sends GitHub's own failure email.
+        if not status.post("note", "preflight", "\n".join(lines), problem=True):
+            say("Preflight found problems, and its FYI issue couldn't be posted")
+            return 1
+        return 0
     lines = ["Checked:"] + [f"- {p}" for p in passed]
     if notes:
         lines += ["", "Notes:"] + [f"- {n}" for n in notes]
     lines += ["", run_line]
     say("Preflight passed")
-    status.post("resolve", "preflight", f"Preflight passed at {common.clock(t)} Pacific.")
     if not status.post("note", "preflight", "\n".join(lines)):
         say("Preflight passed, but its FYI issue couldn't be posted")
         return 1

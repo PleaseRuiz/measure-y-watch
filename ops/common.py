@@ -48,11 +48,12 @@ def _why(e):
 class GitHub:
     """The repository's REST API, as the run's GITHUB_TOKEN."""
 
-    def __init__(self, token=None, repo=None, api=None, timeout=20):
+    def __init__(self, token=None, repo=None, api=None, timeout=20, get_tries=2):
         self.token = os.environ.get("GITHUB_TOKEN", "") if token is None else token
         self.repo = repo or os.environ.get("GITHUB_REPOSITORY", "")
         self.api = (api or os.environ.get("GITHUB_API_URL") or "https://api.github.com").rstrip("/")
         self.timeout = timeout
+        self.get_tries = get_tries
 
     def ready(self):
         return bool(self.token) and "/" in self.repo
@@ -60,7 +61,7 @@ class GitHub:
     def call(self, method, rest, body=None, raw=False, **params):
         """One call to /repos/<repo><rest>. Returns parsed JSON (bytes with raw=True).
 
-        GETs are tried twice on a server or network error; writes once, so nothing is posted twice.
+        GETs are tried get_tries times on a server or network error; writes once, so nothing is posted twice.
         """
         path = f"/repos/{self.repo}{rest}"
         url = self.api + path + ("?" + urllib.parse.urlencode(params) if params else "")
@@ -75,7 +76,7 @@ class GitHub:
         if body is not None:
             data = json.dumps(body).encode()
             headers["Content-Type"] = "application/json"
-        tries = 2 if method == "GET" else 1
+        tries = self.get_tries if method == "GET" else 1
         for attempt in range(1, tries + 1):
             try:
                 req = urllib.request.Request(url, data=data, method=method, headers=headers)

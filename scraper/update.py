@@ -11,14 +11,19 @@ Modes, picked from the environment:
   otherwise                       one fetch of the county's results, from one feed
 ALLOW_DECREASE=true (only set by a hand-started run) lets this run's reading go below the saved YES or NO.
 PRACTICE=1 (rehearsal only) writes data/rehearsal.json instead and never fetches the county page.
+KEEPALIVE=true with CACHE_HIT=false (a run the keep-alive or the watchdog started, when the Actions
+cache didn't restore .last-fetch) skips the county read: without the last fetch time the gap guard
+can't work, so only scheduled runs read the county then.
 MARK_CERTIFIED=true (hand-started run) marks the count final once the county has certified it.
 It is refused before CERTIFY_AFTER, so a mis-tap on election night can't end the count early.
 
 Feeds: the county results page (HTML) normally. After the page fails (can't be fetched, read or
 checked), the NEXT run reads the county's summary XML instead: still one fetch per run, behind the
 same gap guard. 30 minutes after switching, one run tries the page again and stays on it if it
-reads. An XML failure goes back to the page. Both feeds go through the same checks, and saved
-entries say which one they came from ("feed": "html" or "xml"; "source" stays "county").
+reads; a failed retry doesn't count as a failed read. One XML failure is read again from the XML;
+an XML failure right after another failed read goes back to the page. Both feeds go through the
+same checks, and saved entries say which one they came from ("feed": "html" or "xml"; "source"
+stays "county").
 
 .county-state.json (repo root, git-ignored, kept between runs by the Actions cache with
 .last-fetch; written only here; a missing or unreadable file or field counts as the default):
@@ -27,7 +32,8 @@ entries say which one they came from ("feed": "html" or "xml"; "source" stays "c
   failures          county reads that failed in a row
   last_ok           epoch | 0        the last county read that worked (held decreases included)
   last_fail         {"feed", "kind", "at"} | null   the last county read that failed; kind is
-                    fetch (HTTP error, timeout, connection), parse (the reader couldn't read it)
+                    fetch (HTTP error, timeout, connection, or a reply that isn't the county's
+                    page or file), parse (the reader couldn't read the county's page or file)
                     or check (it was read but failed a check)
   pending_decrease  {"yes", "no", "county_updated", "seen_at"} | null   a county reading below the
                     saved YES or NO, held until the next read (seen_at is epoch seconds)
@@ -37,8 +43,9 @@ data/status.json (public, deployed with the site; written only here, and only wh
 reason changes; missing means ok):
   {"state": "ok" | "broken" | "confirming", "reason": "<one sentence for readers>", "since": "<ISO time>"}
 ok after a county read that passes every check; broken after 2 or more failed county reads in a
-row, with a reason that depends on what failed last; confirming while a county decrease waits for
-its second read. A single failed read leaves it as it is (the other feed usually reads next run).
+row, with a reason that depends on what failed (a new reason needs two failed reads in a row that
+agree on it, so it doesn't flip between runs); confirming while a county decrease waits for its
+second read. A single failed read leaves it as it is (the next read usually works).
 
 County decreases: a county reading below the saved YES or NO is held, not saved (read=hold). The
 next county read saves it if the county still shows the same YES and NO (a correction, saved
@@ -55,6 +62,8 @@ Outputs for the workflow (GITHUB_OUTPUT):
                   readers to the county), or the run failed outside a county read; wait: one
                   county read failed (the next run usually reads); no: nothing failed
   feed            html | xml | manual | none   what this run read
+  failure         read | run | none   what made the run fail: a county read, or something else (a
+                  repository file, a manual entry or a bug)
 A failed run exits 1 and writes diagnosis.md (repo root, git-ignored): a short FYI summary, public
 like the log (county numbers, contest titles and times from the county's pages, run status). It's
 printed to the log too.
@@ -103,6 +112,9 @@ COUNTY_AHEAD_LIMIT = 60 * 60
 # The results page's Website Updated and the XML file's time for the same county update differ by about a
 # second (by about 7 minutes when the XML has no Last-Modified and its GeneratedDate is used).
 SAME_UPDATE_SLACK = 10 * 60
+# Text every real reply of each feed has. A reply without it (an error page sent as 200, an empty
+# body) means the county's site isn't answering properly, not that its format changed.
+FEED_MARKERS = {"html": "lblLastPublishedDateTime", "xml": "<NewDataSet"}
 
 FEEDS = {"html": "the county results page", "xml": "the county XML feed"}
 KINDS = ("fetch", "parse", "check")
@@ -111,7 +123,7 @@ DEFAULT_STATE = {"feed": "html", "html_retry_after": 0, "failures": 0, "last_ok"
 
 # What data/status.json tells readers. Public: calm, short, and the same every time.
 NOT_RESPONDING = "The county's results site isn't responding to our automatic updates right now."
-CANT_READ = "The county changed how it publishes results, and our automatic reader can't read it yet."
+CANT_READ = "Our automatic reader can't read the county's results right now."
 CONFIRMING = "The county revised its numbers. We're confirming the change before showing it."
 BROKEN_REASON = {"fetch": NOT_RESPONDING, "parse": CANT_READ, "check": CANT_READ}
 STATES = ("ok", "broken", "confirming")
@@ -273,12 +285,14 @@ def next_state(state, feed, outcome, now, pending=None):
     if worked:
         new["failures"], new["last_ok"], new["pending_decrease"] = 0, t, pending
     else:  # a held decrease waits for the next read that works
-        new["failures"] = state["failures"] + 1
+        # The 30-minute retry of a page that already failed doesn't count: on the XML feed, only XML reads do.
+        retry = feed == "html" and state["feed"] == "xml"
+        new["failures"] = state["failures"] + (0 if retry else 1)
         new["last_fail"] = {"feed": feed, "kind": outcome, "at": t}
     if feed == "xml":
-        if not worked:  # any XML failure: back to the results page
+        if not worked and state["failures"]:  # the XML failed right after another failed read: back to the page
             new["feed"], new["html_retry_after"] = "html", 0
-        else:  # stay on the XML feed until the retry time set when it switched
+        else:  # stay on the XML feed (one XML failure is read again) until the retry time set when it switched
             new["feed"] = "xml"
     elif worked:
         new["feed"], new["html_retry_after"] = "html", 0
@@ -342,6 +356,9 @@ def fetch_problem(e):
 
 def county_reading(now, feed="html"):
     """One fetch of the chosen county feed, if the last county fetch was long enough ago."""
+    if os.environ.get("KEEPALIVE") == "true" and os.environ.get("CACHE_HIT") == "false":
+        raise Skip("the Actions cache didn't restore the last county fetch time, so only scheduled runs "
+                   "read the county")
     try:
         last = float(LAST_FETCH.read_text())
     except (OSError, ValueError):
@@ -372,22 +389,23 @@ def county_reading(now, feed="html"):
             found = county.inspect_xml(text, headers) if feed == "xml" else county.inspect(text)
         except Exception:  # the diagnosis is a bonus; the failed read must still be recorded
             found = None
-        raise ReadFailed(f"{what} check failed: {problem}", "parse", findings=found)
+        # Not the county's page or file at all (an error page sent as 200, an empty reply): the site
+        # isn't answering properly. Only a reply that looks like the county's counts as unreadable.
+        kind = "parse" if FEED_MARKERS[feed] in (text or "") else "fetch"
+        raise ReadFailed(f"{what} check failed: {problem}", kind, findings=found)
     return {"yes": r["yes"], "no": r["no"], "county_updated": r["county_updated"],
             "county_ballots_counted": r["county_ballots_counted"], "source": "county", "feed": feed}
 
 
 def same_update(latest, reading):
     """True when a county reading from the other feed (or after a manual entry) has the saved numbers,
-    stamped a few minutes off: the same county update, which would otherwise be saved twice."""
+    stamped a few minutes off: the same county update, which would otherwise be saved twice. Ballots
+    counted don't decide it: the two feeds can total them differently, and they aren't shown."""
     feed = reading.get("feed")
     if reading.get("source") != "county" or feed not in FEEDS:
         return False
     saved_feed = latest.get("feed") or ("html" if latest.get("source") == "county" else latest.get("source"))
     if saved_feed == feed or (reading["yes"], reading["no"]) != (latest.get("yes"), latest.get("no")):
-        return False
-    ballots = latest.get("county_ballots_counted")
-    if ballots is not None and reading["county_ballots_counted"] != ballots:
         return False
     gap = datetime.fromisoformat(reading["county_updated"]) - datetime.fromisoformat(latest["county_updated"])
     return abs(gap.total_seconds()) <= SAME_UPDATE_SLACK
@@ -568,7 +586,7 @@ def readers_line(status, state, read_failed):
         return f"- Readers: the site is sending readers to the county's results page, with this note: {status['reason']}"
     if status is not None and status["state"] == "confirming":
         return "- Readers: the site shows the last saved numbers, with a note that a county revision is being confirmed"
-    if read_failed and state["failures"] < BROKEN_AFTER:
+    if read_failed and state["failures"] == BROKEN_AFTER - 1:
         return ("- Readers: the site still shows the last saved numbers. If the next county read fails too, "
                 "it sends readers to the county's results page")
     return "- Readers: the site still shows the last saved numbers"
@@ -609,13 +627,16 @@ class Run:
         self.read = "none"   # ok | failed | skipped | hold | none
         self.alert = "no"    # now | wait | no
         self.feed = "none"   # html | xml | manual | none
+        self.failure = "none"  # read | run | none: what made the run fail
         self.state = None    # the county state after this run's county read, if it read the county
         self.changed = False         # data/results.json written
         self.status_changed = False  # data/status.json written
         self.status_written = None   # the state it was written with
+        self.prev_kind = None        # the kind of the read before this one, if it failed too
         self.message = ""
 
     def after_read(self, state, feed, outcome, now, pending=None):
+        self.prev_kind = (state["last_fail"] or {}).get("kind") if state["failures"] else None
         self.state = next_state(state, feed, outcome, now, pending)
         try:
             save_state(self.state)
@@ -632,11 +653,16 @@ class Run:
     def fail(self, err, now):
         if self.event != "push":
             self.read = "failed"
+        self.failure = "read" if isinstance(err, ReadFailed) else "run"
         if isinstance(err, ReadFailed) and self.state is not None:
             if self.state["failures"] >= BROKEN_AFTER:
                 self.alert = "now"
-                self.set_status("broken", BROKEN_REASON[err.kind], now)
-            else:  # one failed read: the next run reads the other feed, which usually works
+                reason, current = BROKEN_REASON[err.kind], read_status()
+                if current and current["state"] == "broken" and current["reason"] in BROKEN_REASON.values() \
+                        and BROKEN_REASON.get(self.prev_kind) != reason:
+                    reason = current["reason"]  # a new reason needs two failed reads in a row that agree on it
+                self.set_status("broken", reason, now)
+            else:  # one failed read (or a failed page retry): the next read usually works
                 self.alert = "wait"
         else:  # not a county read: a file, an entry or a bug, which the next run won't fix by itself
             self.alert = "now"
@@ -657,7 +683,7 @@ class Run:
         values = {"changed": str(self.changed).lower(), "status_changed": str(self.status_changed).lower()}
         if self.message:
             values["message"] = self.message
-        values.update(read=self.read, alert=self.alert, feed=self.feed)
+        values.update(read=self.read, alert=self.alert, feed=self.feed, failure=self.failure)
         write_outputs(**values)
 
 
