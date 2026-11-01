@@ -1,0 +1,26 @@
+name: Schedule check
+
+# Temporary, to be removed Mon Nov 2: shows whether GitHub's timer starts scheduled runs in this
+# repository. It only prints the time and which schedule started it. No county reads.
+on:
+  schedule:
+    # Times are UTC. Every 15 minutes.
+    - cron: "4-59/15 * * * *"
+    # Dated, in the same form as election night's schedules: Sun Nov 1, 5:02 PM to 6:57 PM
+    # Pacific, every 5 minutes.
+    - cron: "2-57/5 1-2 2 11 *"
+    # Dated, in the form used Nov 5 to 16: Mon Nov 2, 8:09 AM to 9:59 AM Pacific, every 10 minutes.
+    - cron: "9-59/10 16-17 2 11 *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Print the start time
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+        run: echo "Started $(date -u '+%a %b %d %H:%M') UTC by schedule '${SCHEDULE:-none (started by hand)}'"
