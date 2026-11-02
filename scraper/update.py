@@ -13,7 +13,8 @@ ALLOW_DECREASE=true (only set by a hand-started run) lets this run's reading go 
 PRACTICE=1 (rehearsal only) writes data/rehearsal.json instead and never fetches the county page.
 KEEPALIVE=true with CACHE_HIT=false (a run the keep-alive or the watchdog started, when the Actions
 cache didn't restore .last-fetch) skips the county read: without the last fetch time the gap guard
-can't work, so only scheduled runs read the county then.
+can't work. When main's Actions cache holds no fetch time, the keep-alive starts a run with
+keepalive unticked, which reads the county.
 MARK_CERTIFIED=true (hand-started run) marks the count final once the county has certified it, and
 records the run's time as certified_at (the forecast tab's final edition prints that date). It is
 refused before CERTIFY_AFTER, so a mis-tap on election night can't end the count early.
@@ -358,8 +359,9 @@ def fetch_problem(e):
 def county_reading(now, feed="html"):
     """One fetch of the chosen county feed, if the last county fetch was long enough ago."""
     if os.environ.get("KEEPALIVE") == "true" and os.environ.get("CACHE_HIT") == "false":
-        raise Skip("the Actions cache didn't restore the last county fetch time, so only scheduled runs "
-                   "read the county")
+        raise Skip("the Actions cache didn't restore the last county fetch time, so this run skips its county "
+                   "read; when main's Actions cache holds no fetch time, the keep-alive starts a run with "
+                   "keepalive unticked, which reads it")
     try:
         last = float(LAST_FETCH.read_text())
     except (OSError, ValueError):

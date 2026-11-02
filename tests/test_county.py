@@ -672,10 +672,10 @@ class OneFetchTest(RunTest):
 
 
     def test_a_keepalive_run_without_the_cache_skips_the_county(self):
-        # Without .last-fetch from the cache the gap guard can't work, so only scheduled runs read.
+        # Without .last-fetch from the cache the gap guard can't work, so a keepalive-ticked run skips the read.
         code, out, log = self.run_update(T0, EVENT="workflow_dispatch", KEEPALIVE="true", CACHE_HIT="false")
         self.assertRun((code, out, log), 0, "skipped", "none", "no")
-        self.assertIn("only scheduled runs read the county", log)
+        self.assertIn("so this run skips its county read", log)
         self.assertEqual(self.county.calls, [])
         self.assertRun(self.run_update(T0, EVENT="workflow_dispatch", KEEPALIVE="true", CACHE_HIT="true"),
                        0, "ok", "html", "no")

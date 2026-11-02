@@ -1,13 +1,27 @@
-# Election night only: keeps Update results running about every 5 minutes even when GitHub
-# starts its scheduled runs late or drops them. ops/keepalive.py says how.
+# Starts every scheduled county read, check and watchdog run itself, so the counting schedule
+# doesn't depend on GitHub's timer (it starts scheduled runs here hours late, if at all).
+# ops/keepalive.py says how. It runs until Tue Nov 17, 7:10 AM Pacific, handing over to a fresh
+# run every 5.5 hours. It reads the schedule lines when it starts.
 # Off switch: the repository variable KEEPALIVE=off skips it (README, "Election night is automatic").
 name: Keep-alive
 
 on:
+  # A push to main that changes the keep-alive or a schedule file starts it. While one is running,
+  # the new run waits in the concurrency group and the running one's hand-over takes its place
+  # with a fresh run of the same code on main; cancel the running one in the Actions tab to switch now.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/keepalive.yml
+      - .github/workflows/update.yml
+      - .github/workflows/watchdog.yml
+      - .github/workflows/preflight.yml
+      - ops/keepalive.py
+      - ops/common.py
   schedule:
     # Times are UTC. Pacific is UTC-8 after daylight saving ends on Nov 1.
-    # Tue Nov 3, 7:50 PM Pacific, with backups at 8:10 PM and 8:40 PM in case GitHub drops or
-    # delays a start. A backup that fires while one is running waits in line and starts after it.
+    # Tue Nov 3, 7:50 PM Pacific, with backups at 8:10 PM and 8:40 PM, in case nothing else has
+    # started it. A start while one is running waits in line; the running one's hand-over replaces it.
     - cron: "50 3 4 11 *"
     - cron: "10 4 4 11 *"
     - cron: "40 4 4 11 *"
@@ -26,7 +40,7 @@ jobs:
     if: vars.KEEPALIVE != 'off'
     runs-on: ubuntu-latest
     # Under GitHub's 6-hour job limit. The loop hands over to a fresh run after 5.5 hours.
-    timeout-minutes: 350
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +48,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Start Update results every 5 minutes when none is queued or running (Tue 7:45 PM to Wed 5 AM Pacific)
+      - name: Start each scheduled read, check and watchdog run on time (until Tue Nov 17, 7:10 AM Pacific)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python ops/keepalive.py

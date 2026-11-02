@@ -20,12 +20,14 @@ Page: https://pleaseruiz.github.io/measure-y-watch/
 - Tue Nov 3, 7:57 PM to Wed Nov 4, 4:57 AM: every 5 minutes
 - Thu Nov 5 to Mon Nov 16, 8 AM to 6 PM: every 10 minutes
 - Between those, once an hour (at :07) until Tue Nov 17, 7 AM, then once a day at 5:07 PM until
-  Thu Dec 3. So a banner left by the last reads of a window clears by itself, and a county update
-  posted outside the windows still shows up.
+  Thu Dec 3 (Claude's daily check starts those at 5:12 PM, since GitHub's timer runs hours late
+  here). The hourly reads clear a banner left by the last reads of a window and catch a county
+  update posted outside the windows.
 
-GitHub can start scheduled runs late or skip them. On election night the keep-alive starts a run
-every 5 minutes when none is waiting or running, and in both windows the watchdog checks every 10
-minutes that county reads keep coming and the page is current. A run can always be started by hand.
+GitHub's timer starts scheduled runs in this repository hours late, if at all (it started the Sun
+Nov 1, 2:13 PM drill at 5:29 PM), so the keep-alive starts the scheduled runs itself until Tue Nov
+17, 7:10 AM (below). In both windows the watchdog checks every 10 minutes that county reads keep
+coming and the page is current. A run can always be started by hand.
 
 ## Run it by hand (phone)
 
@@ -48,7 +50,8 @@ GitHub app or github.com: **Actions → Update results → Run workflow** (branc
   couple of minutes, and the next Certified run writes a fresh `certified_at`.
 - **Keepalive**: leave it unticked. The keep-alive and the watchdog's late-read restarts tick it, so
   their runs republish only when the live page is behind; a hand-started run (and the watchdog's
-  republish) always republishes.
+  republish) always republishes. When the Actions cache holds no last read time, the keep-alive
+  leaves it unticked, so that run reads the county.
 
 After a hand-started run, check that it turned green. If it says Cancelled (another run took its
 place in line), start it again.
@@ -67,7 +70,7 @@ break, even on pages already open. Change it back to turn it on. The Live count 
 - After pushing a change to that file, check that the run it started turned green. If it says
   Cancelled, start Update results by hand: a hand-started run always republishes.
 
-A run fails (red, and GitHub emails you) when the contest title changes, a number isn't a
+A run fails (red) when the contest title changes, a number isn't a
 whole number, a manual entry lowers YES or NO without **Allow decrease** or has a time that isn't
 newer than the saved one, or the county's results can't be read. Nothing is saved to
 `data/results.json` when a run fails. When the county itself lowers YES or NO, the run doesn't fail:
@@ -86,12 +89,24 @@ the county's official results.
 - **Tue Nov 3, 5:05 PM and 5:15 PM: preflight.** One county read each (the results page, then the
   county's backup data feed), plus a check that the live page matches `main`, the forecast engine
   works, and Update results, Keep-alive and Watchdog are on. It posts an FYI issue, closed at once,
-  with the numbers it read or with what failed.
-- **Tue 7:50 PM to Wed 5 AM: the keep-alive.** Every 5 minutes it starts Update results unless a run
-  is already waiting or running, in case GitHub starts scheduled runs late. The county is still read
-  at most once every 4 minutes; an extra run just says "Skipped fetch". (If GitHub's cache doesn't
-  bring back the last read time, the runs it starts skip the county read, and only scheduled runs
-  read it.) After 5.5 hours it starts a fresh Keep-alive run to carry on.
+  with the numbers it read or with what failed. The keep-alive starts these checks; a start by
+  GitHub's timer, which runs hours late here, does nothing.
+- **Until Tue Nov 17, 7:10 AM: the keep-alive.** It reads the schedule lines in `update.yml`,
+  `watchdog.yml` and `preflight.yml` when it starts, and starts each of those runs on time, because
+  GitHub's timer runs hours late. It doesn't start Update results while a run is waiting or
+  running, or when one was already started for that time (by the watchdog or by GitHub's timer).
+  Its starts stay at least 290 seconds apart, and the county is read at most once every 4
+  minutes; an extra run just says "Skipped fetch". If the Actions cache holds no last read time, it
+  starts Update results with keepalive unticked about every 20 minutes, so that run reads the
+  county and saves one; the runs in between skip their read. A time missed by up to an hour is
+  caught up once. Every 5.5 hours it hands over to a fresh Keep-alive run; if that fails, it keeps
+  going and tries again each minute for 8 minutes, then ends red. A push that changes it or a
+  schedule file queues a fresh run; at the next hand-over a run of the new code takes its place
+  (the queued one then shows as Cancelled, which is expected). To switch at once, cancel the
+  running Keep-alive run in the Actions tab. Claude's checks start it if it isn't running: every
+  half hour on election night, and before each county update (Nov 4, 5, 6, 9, 12, 13 and 16).
+  Between those, nothing restarts a stopped keep-alive, and the watchdog stops with it: start it by
+  hand (Actions → Keep-alive → Run workflow).
 - **Update results** runs on the schedule above. It reads the county's results page. When the page
   can't be read, the next run reads the county's backup data feed (XML) instead, and tries the page
   again every 30 minutes.
@@ -180,12 +195,15 @@ run logs: they only show county numbers, times and run status.
 | Preflight | Tue 5:05 and 5:15 PM | Lists what it checked, and what the automation does about any problem; closed at once |
 | DRILL | Sun 2:13 PM | Opens and closes; nothing is wrong |
 
-A failed Update results run is still red in the Actions tab, and GitHub may email about it. That's FYI too.
+A failed Update results run is still red in the Actions tab. GitHub emails you about runs you start
+yourself and about failed runs its timer starts; runs the keep-alive starts show up only in the
+Actions tab and as the FYI issues above.
 
 ### The keep-alive switch
 The repository variable `KEEPALIVE` set to `off` (Settings → Secrets and variables → Actions →
 Variables) makes Keep-alive runs skip. One that's already running stops when it's cancelled in the
-Actions tab. Scheduled Update results runs and the watchdog go on either way.
+Actions tab. Without the keep-alive, nothing runs on time (GitHub's timer runs hours late here);
+runs can still be started by hand.
 
 ### What to expect
 - 8:10 PM: the county's first report, mail ballots received through Sunday, probably about half of

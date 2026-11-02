@@ -116,7 +116,8 @@ jobs:
           MANUAL_COUNTY_UPDATED: ${{ inputs.county_updated }}
           ALLOW_DECREASE: ${{ inputs.allow_decrease }}
           MARK_CERTIFIED: ${{ inputs.certified }}
-          # Runs the keep-alive or the watchdog start skip the county read when the cache missed.
+          # Runs started with keepalive ticked (by the keep-alive or the watchdog) skip the county read
+          # when the cache missed.
           KEEPALIVE: ${{ inputs.keepalive }}
           CACHE_HIT: ${{ steps.cache.outputs.cache-matched-key != '' || steps.cache_old.outputs.cache-matched-key != '' }}
         run: python scraper/update.py
@@ -226,7 +227,7 @@ jobs:
           # Runs the keep-alive and the watchdog's late-read restarts start (keepalive ticked) republish
           # only when behind; the watchdog's republish runs leave it unticked, so they always republish.
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$KEEPALIVE" != "true" ]; then
-            echo "Hand-started run; deploying"
+            echo "Started by hand or with keepalive unticked; deploying"
             echo "behind=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi

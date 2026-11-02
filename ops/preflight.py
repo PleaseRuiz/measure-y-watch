@@ -19,6 +19,10 @@ only if the issue couldn't be posted.
 
 The drill (Sun Nov 1 at 2:13 PM, or by hand) posts a closed test issue: "DRILL: test alert,
 nothing is wrong, no action needed." The run fails only if it couldn't be posted.
+
+A run GitHub's timer started (event schedule) does nothing: the timer runs hours late in this
+repository (it started the Sun Nov 1 drill 3 hours late), and the keep-alive starts the checks on
+time. Only runs started with workflow_dispatch (the keep-alive, Claude's backup, or by hand) check.
 Prints status lines only.
 """
 
@@ -39,7 +43,8 @@ WORKFLOWS = (("update.yml", "Update results"), ("keepalive.yml", "Keep-alive"), 
 # What still runs when a workflow is turned off.
 WITHOUT = {
     "update.yml": "Without it no county reads happen; the watchdog's FYI issues will say so.",
-    "keepalive.yml": "Scheduled Update results runs and the watchdog still run without it.",
+    "keepalive.yml": ("Without it nothing starts Update results, the watchdog or this check on time (GitHub's "
+                      "timer runs hours late here); runs can still be started by hand."),
     "watchdog.yml": "Update results and the keep-alive still run without it.",
 }
 SOURCES = {"html": "the county results page", "xml": "the county's backup data feed (XML)"}
@@ -168,11 +173,11 @@ def check(gh, source, t):
             all_on = False
             problems.append((f"{name} is turned off ({str(state).replace('_', ' ')}).",
                              f"Nothing in the automation can turn a workflow back on. {WITHOUT[file]}"))
-    if all_on:
+    keepalive_off = os.environ.get("KEEPALIVE_SETTING", "").strip().lower() == "off"
+    if all_on and not keepalive_off:
         passed.append("Update results, Keep-alive and Watchdog are on")
-    if os.environ.get("KEEPALIVE_SETTING", "").strip().lower() == "off":
-        notes.append("Keep-alive is switched off by the repository variable KEEPALIVE=off; scheduled Update "
-                     "results runs and the watchdog still run.")
+    if keepalive_off:
+        problems.append(("Keep-alive is switched off by the repository variable KEEPALIVE=off.", WITHOUT["keepalive.yml"]))
     return problems, passed, notes
 
 
@@ -213,6 +218,10 @@ def main():
     if not gh.ready():
         say("GITHUB_TOKEN or GITHUB_REPOSITORY not set; nothing checked")
         return 1
+    if os.environ.get("GITHUB_EVENT_NAME") == "schedule":
+        say("Started by GitHub's timer, which runs hours late in this repository; the keep-alive starts the "
+            "preflight checks on time, so this run does nothing")
+        return 0
     if os.environ.get("DRILL", "").strip().lower() == "true":
         say(f"Drill at {common.clock(t)} Pacific: no county read")
         return drill(t)
