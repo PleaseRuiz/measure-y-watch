@@ -1,16 +1,17 @@
 {
-  "status": "pre",
+  "status": "counting",
   "contest": "City of Belmont, Measure Y (Majority Approval Required)",
   "threshold": 0.5,
   "expected_votes": null,
   "source_url": "https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html",
   "latest": {
-    "yes": 0,
-    "no": 0,
-    "county_updated": "2026-10-26T11:48:45-07:00",
-    "county_ballots_counted": 0,
-    "fetched_at": "2026-10-28T22:00:21-07:00",
-    "source": "county"
+    "yes": 2057,
+    "no": 2533,
+    "county_updated": "2026-11-03T20:15:35-08:00",
+    "county_ballots_counted": 115245,
+    "fetched_at": "2026-11-03T20:17:12-08:00",
+    "source": "county",
+    "feed": "html"
   },
   "history": [
     {
@@ -20,6 +21,15 @@
       "county_ballots_counted": 0,
       "fetched_at": "2026-10-28T22:00:21-07:00",
       "source": "county"
+    },
+    {
+      "yes": 2057,
+      "no": 2533,
+      "county_updated": "2026-11-03T20:15:35-08:00",
+      "county_ballots_counted": 115245,
+      "fetched_at": "2026-11-03T20:17:12-08:00",
+      "source": "county",
+      "feed": "html"
     }
   ]
 }
