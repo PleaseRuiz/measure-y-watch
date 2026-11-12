@@ -5,11 +5,11 @@
   "expected_votes": null,
   "source_url": "https://www.livevoterturnout.com/ENR/sanmateocaenr/20/en/Y3Mvf_Index_20.html",
   "latest": {
-    "yes": 4393,
-    "no": 5521,
-    "county_updated": "2026-11-09T16:27:09-08:00",
-    "county_ballots_counted": 232443,
-    "fetched_at": "2026-11-09T16:34:10-08:00",
+    "yes": 5156,
+    "no": 6223,
+    "county_updated": "2026-11-12T09:24:56-08:00",
+    "county_ballots_counted": 280997,
+    "fetched_at": "2026-11-12T09:34:16-08:00",
     "source": "county",
     "feed": "html"
   },
@@ -109,6 +109,15 @@
       "county_updated": "2026-11-09T16:27:09-08:00",
       "county_ballots_counted": 232443,
       "fetched_at": "2026-11-09T16:34:10-08:00",
+      "source": "county",
+      "feed": "html"
+    },
+    {
+      "yes": 5156,
+      "no": 6223,
+      "county_updated": "2026-11-12T09:24:56-08:00",
+      "county_ballots_counted": 280997,
+      "fetched_at": "2026-11-12T09:34:16-08:00",
       "source": "county",
       "feed": "html"
     }
